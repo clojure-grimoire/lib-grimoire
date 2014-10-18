@@ -241,7 +241,7 @@
            [part parts] parts]
       (if-not parent
         (let [typef (io/file )])
-))
+        ))))
 
 (defn thing->relative-path [class thing]
   (->> thing
