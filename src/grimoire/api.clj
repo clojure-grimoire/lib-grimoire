@@ -4,7 +4,7 @@
   regard to the implementation of the datastore. Ports of Grimoire to
   different datastores should only need to tweak this namespace."
 
-  (:require [grimoire.web.util :as util]
+  (:require [grimoire.util :as util]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clj-semver.core :as semver]))
