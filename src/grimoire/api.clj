@@ -309,12 +309,3 @@
                      (.isDirectory d))
           f     (.listFiles d)]
       f)))
-
-
-;; DEV SHIT DO NOT COMMIT
-(def config      {:datastore {:docs "doc-store/"}})
-(def a-group     (first (list-groups     config           )))
-(def a-artifact  (first (list-artifacts  config a-group   )))
-(def a-version   (first (list-versions   config a-artifact)))
-(def a-namespace (first (list-namespaces config a-version )))
-(def a-def       (first (list-fns        config a-namespace)))
