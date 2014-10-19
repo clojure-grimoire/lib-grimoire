@@ -228,9 +228,15 @@
 
 ;; Interacting with the datastore - writing
 ;;--------------------------------------------------------------------
-(defn write-docs [config thing data]
+(defn write-docs
+  "Writes a map, being documentation data, into the datastore as specified by
+  config at the def denoted by thing."
+
+  [config thing data]
   (let [thing  (ensure-thing thing)
         _      (assert thing)
-        handle (thing->handle config :docs thing)]
+        _      (assert (isa? :def thing))
+        handle (thing->handle config :docs thing)
+        _      (assert handle)]
     (->> handle io/writer (json/generate-stream data) (.flush))
     nil))
