@@ -7,6 +7,7 @@
   (:require [grimoire.util :as util]
             [clojure.java.io :as io]
             [clojure.string :as string]
+            [cheshire.core :as json]
             [clj-semver.core :as semver]))
 
 (defn isa? [t o]
