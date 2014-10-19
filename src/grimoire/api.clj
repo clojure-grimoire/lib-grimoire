@@ -214,6 +214,7 @@
 (defn read-notes
   "Returns a sequence of pairs [version note-text] for all notes on
   prior or equal versions of the given thing."
+
   [config thing]
   (let [thing  (ensure-thing thing)]
     (for [thing (thing->prior-versions config thing)
