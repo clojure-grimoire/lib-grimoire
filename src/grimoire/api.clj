@@ -71,3 +71,54 @@
        (map :name)
        (interpose "/")
        (apply str)))
+
+(defn ensure-thing [maybe-thing]
+  (cond (string? maybe-thing)
+        ,,(thing->path maybe-thing)
+
+        (map? maybe-thing)
+        ,,maybe-thing
+
+        :else
+        ,,(throw (Exception.
+                  (str "Unsupported ensure-thing value "
+                       (pr-str maybe-thing))))))
+
+;; Interacting with the datastore
+;;--------------------------------------------------------------------
+(defn- thing->handle
+  "Helper for grabbing handles for reading/writing.
+
+  :docs     -> .json file
+  :notes    -> .md file
+  :examples -> dir"
+
+  [{store :datastore} which thing]
+  (let [d (get store which)
+        p (io/file (str d "/" (thing->path (:parent thing))))
+        e (case which 
+            (:docs)     ".json"
+            (:examples) nil
+            (:notes)    ".md")
+        n (if (= :def (:type thing))
+            (util/munge (:name thing))
+            (name (:type thing)))
+        h (io/file p (str n e))]
+    (assert (.mkdirs p))
+    (when (= :examples which)
+      (assert (.mkdir h)))
+    h))
+
+(defn- thing->notes-handle
+  "Helper for grabbing the handle of a notes file "
+
+  [c thing]
+  (let [h (thing->handle c :notes thing)]
+    (io/file h "notes.md")))
+
+(defn- thing->example-handle
+  "Helper for getting a file handle for reading and writing a named example."
+
+  [c thing name]
+  (let [h (thing->handle c :examples thing)]
+    (io/file h (str name ".clj")))
