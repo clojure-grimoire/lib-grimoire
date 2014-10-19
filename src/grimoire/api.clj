@@ -122,3 +122,92 @@
   [c thing name]
   (let [h (thing->handle c :examples thing)]
     (io/file h (str name ".clj"))))
+
+(defn read-docs [config thing]
+  (let [thing  (ensure-thing thing)
+        handle (thing->handle config :docs thing)]
+    (->> handle io/reader json/parse-stream)))
+
+(defn list-groups [config]
+  (let [handle (io/file (-> config :datastore :docs))]
+    (for [d (.listFiles handle)
+          :when (.isDirectory d)]
+      (->T :group nil (.getName d)))))
+
+(defn list-artifacts [config thing]
+  (let [thing  (ensure-thing thing)
+        thing  (thing->group thing)
+        _      (assert thing)
+        handle (thing->handle config :else thing)]
+    (for [d (.listFiles handle)
+          :when (.isDirectory d)]
+      (->T :artifact thing (.getName d)))))
+
+(defn list-versions [config thing]
+  (let [thing    (ensure-thing thing)
+        artifact (thing->artifact thing)
+        _        (assert artifact)
+        handle   (thing->handle config :else artifact)]
+    (for [d     (.listFiles handle)
+          :when (.isDirectory d)]
+      (->T :version artifact (.getName d)))))
+
+(defn list-namespaces [config thing]
+  (let [thing   (ensure-thing thing)
+        _       (assert thing)
+        version (thing->version thing)
+        _       (assert version)
+        handle  (thing->handle config :else version)]
+    (for [d     (.listFiles handle)
+          :when (.isDirectory d)]
+      (->T :namespace version (.getName d)))))
+
+(defn list-defs [config thing]
+  (let [thing     (ensure-thing thing)
+        _         (assert thing)
+        namespace (thing->namespace thing)
+        _         (assert namespace)
+        handle    (thing->handle config :else namespace)]
+    (for [d     (.listFiles handle)
+          :when (.isFile d)]
+      (->T :def namespace (string/replace (.getName d) #".clj" "")))))
+
+(defn- thing->prior-versions
+  "Returns a sequence of things representing itself at earlier or equal versions."
+
+  [config thing]
+  (let [thing    (ensure-thing thing)
+        currentv (thing->version thing) ;; version handle
+        current  (:name currentv)       ;; version string
+        added    (:added (read-docs config thing)) ;; version string
+        versions (list-versions config (:parent currentv))
+        unv-path (thing->relative-path :version thing)]
+    (for [v     versions
+          :when (>= (semver/cmp v added) 0)
+          :when (<= (semver/cmp v current) 0)]
+      (path->thing (str (thing->path v) "/" unv-path)))))
+
+(defn read-examples
+  "Returns a sequence of pairs [version example-text] for all examples on prior
+  or equal versions of the given thing."
+
+  [config thing]
+  (let [thing  (ensure-thing thing)]
+    (for [thing (thing->prior-versions config thing)
+          :let  [v (:name (thing->version thing))
+                 h (thing->handle config :examples thing)]
+          ex    (.listFiles h)
+          :when (.isFile ex)]
+      [v (slurp ex)])))
+
+(defn read-notes
+  "Returns a sequence of pairs [version note-text] for all notes on
+  prior or equal versions of the given thing."
+  [config thing]
+  (let [thing  (ensure-thing thing)]
+    (for [thing (thing->prior-versions config thing)
+          :let  [v (:name (thing->version thing))
+                 h (thing->notes-handle config thing)]
+          :when (.exists h)
+          :when (.isFile h)]
+      [v (slurp h)])))
