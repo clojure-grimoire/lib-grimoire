@@ -86,7 +86,7 @@
 
 (defn ensure-thing [maybe-thing]
   (cond (string? maybe-thing)
-        ,,(thing->path maybe-thing)
+        ,,(path->thing maybe-thing)
 
         (map? maybe-thing)
         ,,maybe-thing
