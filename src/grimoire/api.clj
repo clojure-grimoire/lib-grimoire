@@ -225,3 +225,12 @@
           :when (.exists h)
           :when (.isFile h)]
       [v (slurp h)])))
+
+;; Interacting with the datastore - writing
+;;--------------------------------------------------------------------
+(defn write-docs [config thing data]
+  (let [thing  (ensure-thing thing)
+        _      (assert thing)
+        handle (thing->handle config :docs thing)]
+    (->> handle io/writer (json/generate-stream data) (.flush))
+    nil))
