@@ -121,4 +121,4 @@
 
   [c thing name]
   (let [h (thing->handle c :examples thing)]
-    (io/file h (str name ".clj")))
+    (io/file h (str name ".clj"))))
