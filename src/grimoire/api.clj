@@ -5,7 +5,6 @@
   different datastores should only need to tweak this namespace."
   (:refer-clojure :exclude [isa?])
   (:require [grimoire.util :as util]
-            [grimoire.types :refer :all]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clj-semver.core :as semver]))
