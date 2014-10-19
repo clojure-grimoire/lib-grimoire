@@ -17,9 +17,14 @@
   {:type   t
    :parent parent
    :name   name
-   :uri    (str (:uri parent) 
+   :uri    (str (:uri parent)
                 (when (:uri parent) "/")
                 name)})
+
+(defn thing->group [thing]
+  (if-not (isa? :group thing)
+    (when thing (recur (:parent thing)))
+    thing))
 
 (defn thing->artifact [thing]
   (if-not (isa? :artifact thing)
@@ -28,6 +33,11 @@
 
 (defn thing->version [thing]
   (if-not (isa? :version thing)
+    (when thing (recur (:parent thing)))
+    thing))
+
+(defn thing->namespace [thing]
+  (if-not (isa? :namespace thing)
     (when thing (recur (:parent thing)))
     thing))
 
@@ -84,7 +94,7 @@
                   (str "Unsupported ensure-thing value "
                        (pr-str maybe-thing))))))
 
-;; Interacting with the datastore
+;; Interacting with the datastore - reading
 ;;--------------------------------------------------------------------
 (defn- thing->handle
   "Helper for grabbing handles for reading/writing.
@@ -94,19 +104,20 @@
   :examples -> dir"
 
   [{store :datastore} which thing]
-  (let [d (get store which)
+  (let [d (get store which (:docs store))
         p (io/file (str d "/" (thing->path (:parent thing))))
-        e (case which 
+        e (case which
             (:docs)     ".json"
             (:examples) nil
-            (:notes)    ".md")
+            (:notes)    ".md"
+            :else       nil)
         n (if (= :def (:type thing))
             (util/munge (:name thing))
-            (name (:type thing)))
+            (:name thing))
         h (io/file p (str n e))]
-    (assert (.mkdirs p))
+    (.mkdirs p)
     (when (= :examples which)
-      (assert (.mkdir h)))
+      (.mkdir h))
     h))
 
 (defn- thing->notes-handle
