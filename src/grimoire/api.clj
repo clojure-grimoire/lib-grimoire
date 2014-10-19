@@ -48,6 +48,7 @@
   a Handle."
 
   [thing]
+  {:pre [(map? thing)]}
   (or (:uri thing)
       (->> thing
            (iterate :parent)
