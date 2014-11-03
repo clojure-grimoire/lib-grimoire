@@ -202,15 +202,16 @@
   you just take (meta the-var) and slam it right into write-meta
 
   Expected keys:
-  - :ns
-  - :name
-  - :doc
-  - :arglists
-  - :src
-  - :added
-  - :column
-  - :line
-  - :file
+  - :ns       -> string naming the namespace
+  - :name     -> string naming the symbol (unmunged)
+  - :doc      -> documentation string
+  - :arglists -> list of argument vectors
+  - :src      -> string of source code
+  - :added    -> string being a SemVer version
+  - :column   -> integer being colunm number
+  - :line     -> integer being line number
+  - :file     -> string being file name
+  - :type     -> one of #{:macro :fn :var :special}
 
   Note that this operation cleans the following keys:
   - :ns   - transformed from a Namespace to a String
