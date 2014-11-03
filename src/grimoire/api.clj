@@ -27,18 +27,19 @@
   :examples -> dir"
 
   [{store :datastore} which thing]
-  (let [d (get store which (:docs store))
-        p (io/file (str d "/" (thing->path (:parent thing))))
-        e (case which
-            (:meta)     ".edn"
-            (:related)  ".txt"
-            (:examples) nil
-            (:notes)    ".md"
-            nil)
-        n (if (= :def (:type thing))
-            (util/munge (:name thing))
-            (:name thing))
-        h (io/file p (str n e))]
+  (let [d      (get store which (:docs store))
+        parent (:parent thing)
+        p      (io/file (str d "/" (when parent (thing->path parent))))
+        e      (case which
+                 (:meta)     ".edn"
+                 (:related)  ".txt"
+                 (:examples) nil
+                 (:notes)    ".md"
+                 nil)
+        n      (if (= :def (:type thing))
+                 (util/munge (:name thing))
+                 (:name thing))
+        h      (io/file p (str n e))]
     (.mkdirs p)
     (when (= :examples which)
       (when-not (.isDirectory h)
@@ -117,7 +118,7 @@
         handle    (thing->handle config :else namespace)]
     (for [d     (.listFiles handle)
           :when (.isFile d)]
-      (->T :def namespace (string/replace (.getName d) #".clj" "")))))
+      (->T :def namespace (string/replace (.getName d) #".edn" "")))))
 
 (declare read-meta)
 
@@ -186,12 +187,13 @@
 ;; Interacting with the datastore - writing
 ;;--------------------------------------------------------------------
 
-;; FIXME: Remove this update when 1.6 drops
+;; FIXME: Remove this update when 1.7 drops
 (defn update
   "λ [{A → B} A (λ [B args*] → C) args*] → {A → C}
 
   Updates a key in the map by applying f to the value at that key more
   arguments, returning the resulting map."
+
   [map key f & args]
   (assoc map key
          (apply f (get map key) args)))
