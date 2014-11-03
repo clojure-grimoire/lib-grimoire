@@ -119,6 +119,8 @@
           :when (.isFile d)]
       (->T :def namespace (string/replace (.getName d) #".clj" "")))))
 
+(declare read-meta)
+
 (defn- thing->prior-versions
   "Returns a sequence of things representing itself at earlier or equal versions."
 
