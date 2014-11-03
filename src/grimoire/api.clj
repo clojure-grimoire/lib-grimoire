@@ -118,7 +118,7 @@
         handle    (thing->handle config :else namespace)]
     (for [d     (.listFiles handle)
           :when (.isFile d)]
-      (->T :def namespace (string/replace (.getName d) #".clj" "")))))
+      (->T :def namespace (string/replace (.getName d) #".edn" "")))))
 
 (declare read-meta)
 
