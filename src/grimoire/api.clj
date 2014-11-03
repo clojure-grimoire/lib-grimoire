@@ -186,12 +186,13 @@
 ;; Interacting with the datastore - writing
 ;;--------------------------------------------------------------------
 
-;; FIXME: Remove this update when 1.6 drops
+;; FIXME: Remove this update when 1.7 drops
 (defn update
   "λ [{A → B} A (λ [B args*] → C) args*] → {A → C}
 
   Updates a key in the map by applying f to the value at that key more
   arguments, returning the resulting map."
+
   [map key f & args]
   (assoc map key
          (apply f (get map key) args)))
