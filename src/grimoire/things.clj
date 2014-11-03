@@ -52,12 +52,17 @@
            (interpose "/")
            (apply str))))
 
-(defn path->thing [path]
-  (->> (string/split path #"/")
-       (map vector [:group :artifact :version :namespace :def])
+(defn ->Def [groupid artifactid version namespace name]
+  (->> (map vector
+            [:group :artifact :version :namespace :def]
+            [groupid artifactid version namespace name])
        (reduce (fn [parent [t el]]
                  (->T t parent el))
                nil)))
+
+(defn path->thing [path]
+  (->> (string/split path #"/")
+       (apply ->Def)))
 
 ;; Manipulating things
 ;;--------------------------------------------------------------------
