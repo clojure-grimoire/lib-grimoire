@@ -27,19 +27,21 @@
   :examples -> dir"
 
   [{store :datastore} which thing]
-  (let [d      (get store which (:docs store))
-        parent (:parent thing)
-        p      (io/file (str d "/" (when parent (thing->path parent))))
-        e      (case which
-                 (:meta)     ".edn"
-                 (:related)  ".txt"
-                 (:examples) nil
-                 (:notes)    ".md"
-                 nil)
-        n      (if (= :def (:type thing))
-                 (util/munge (:name thing))
-                 (:name thing))
-        h      (io/file p (str n e))]
+  (let [which-store (if-not (= :notes which)
+                      :docs :notes)
+        d           (get store which (which-store store))
+        parent      (:parent thing)
+        p           (io/file (str d "/" (when parent (thing->path parent))))
+        e           (case which
+                      (:meta)     ".edn"
+                      (:related)  ".txt"
+                      (:examples) nil
+                      (:notes)    ".md"
+                      nil)
+        n           (if (= :def (:type thing))
+                      (util/munge (:name thing))
+                      (:name thing))
+        h           (io/file p (str n e))]
     (.mkdirs p)
     (when (= :examples which)
       (when-not (.isDirectory h)
@@ -147,7 +149,7 @@
   (let [thing  (ensure-thing thing)]
     (for [thing (thing->prior-versions config thing)
           :let  [v (:name (thing->version thing))
-                 h (thing->handle config :notes thing)]
+                 h (thing->notes-handle config thing)]
           :when (.exists h)
           :when (.isFile h)]
       [v (slurp h)])))
@@ -243,7 +245,7 @@
          (-> config :datastore :doc)]}
   (let [thing  (ensure-thing thing)
         _      (assert thing)
-        handle (thing->handle config nil thing)
+        handle (thing->notes-handle config thing)
         _      (assert thing)]
     (spit handle data)))
 
