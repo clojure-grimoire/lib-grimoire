@@ -6,102 +6,23 @@
 
   (:refer-clojure :exclude [isa?])
   (:require [grimoire.util :as util]
+            [grimoire.things :refer :all]
             [clojure.java.io :as io]
             [clojure.string :as string]
+            [clojure.edn :as edn]
             [cheshire.core :as json]
             [clj-semver.core :as semver]))
 
-(defn isa? [t o]
-  (= (:type o) t))
-
-(defn ->T [t parent name]
-  {:type   t
-   :parent parent
-   :name   name
-   :uri    (str (:uri parent)
-                (when (:uri parent) "/")
-                name)})
-
-(defn thing->group [thing]
-  (if-not (isa? :group thing)
-    (when thing (recur (:parent thing)))
-    thing))
-
-(defn thing->artifact [thing]
-  (if-not (isa? :artifact thing)
-    (when thing (recur (:parent thing)))
-    thing))
-
-(defn thing->version [thing]
-  (if-not (isa? :version thing)
-    (when thing (recur (:parent thing)))
-    thing))
-
-(defn thing->namespace [thing]
-  (if-not (isa? :namespace thing)
-    (when thing (recur (:parent thing)))
-    thing))
-
-(defn thing->path
-  "Provides a mechanism for converting one of the Handle objects into a
-  cannonical \"path\" which can be serialized, deserialized and walked back into
-  a Handle."
-
-  [thing]
-  {:pre [(map? thing)]}
-  (or (:uri thing)
-      (->> thing
-           (iterate :parent)
-           (take-while identity)
-           (reverse)
-           (map :name)
-           (interpose "/")
-           (apply str))))
-
-(defn path->thing [path]
-  (->> (string/split path #"/")
-       (map vector [:group :artifact :version :namespace :def])
-       (reduce (fn [parent [t el]]
-                 (->T t parent el))
-               nil)))
-
-(defn thing->relative-path [t thing]
-  (->> thing
-       (iterate :parent)
-       (take-while #(not (= (:type %1) t)))
-       (reverse)
-       (map :name)
-       (interpose "/")
-       (apply str)))
-
-(defn thing->root-to [t thing]
-  (->> thing
-       (iterate :parent)
-       (take-while identity)
-       (reverse)
-       (take-while #(not (= (:type %1) t)))
-       (map :name)
-       (interpose "/")
-       (apply str)))
-
-(defn ensure-thing [maybe-thing]
-  (cond (string? maybe-thing)
-        ,,(path->thing maybe-thing)
-
-        (map? maybe-thing)
-        ,,maybe-thing
-
-        :else
-        ,,(throw (Exception.
-                  (str "Unsupported ensure-thing value "
-                       (pr-str maybe-thing))))))
-
 ;; Interacting with the datastore - reading
 ;;--------------------------------------------------------------------
+
+;; Private helpers for getting fs handles
+;;--------------------
 (defn- thing->handle
   "Helper for grabbing handles for reading/writing.
 
-  :docs     -> .json file
+  :meta     -> .edn file
+  :related  -> .txt
   :notes    -> .md file
   :examples -> dir"
 
@@ -109,17 +30,19 @@
   (let [d (get store which (:docs store))
         p (io/file (str d "/" (thing->path (:parent thing))))
         e (case which
-            (:docs)     ".json"
+            (:meta)     ".edn"
+            (:related)  ".txt"
             (:examples) nil
             (:notes)    ".md"
-            :else       nil)
+            nil)
         n (if (= :def (:type thing))
             (util/munge (:name thing))
             (:name thing))
         h (io/file p (str n e))]
     (.mkdirs p)
     (when (= :examples which)
-      (.mkdir h))
+      (when-not (.isDirectory h)
+        (.mkdir h)))
     h))
 
 (defn- thing->notes-handle
@@ -136,11 +59,22 @@
   (let [h (thing->handle c :examples thing)]
     (io/file h (str name ".clj"))))
 
-(defn read-docs [config thing]
-  (let [thing  (ensure-thing thing)
-        handle (thing->handle config :docs thing)]
-    (->> handle io/reader json/parse-stream)))
+(defn- thing->meta-handle
+  "Helper for getting a file handle for reading and writing meta"
 
+  [c thing]
+  (let [h (thing->handle c :meta thing)]
+    h))
+
+(defn- thing->related-handle
+  "Helper for getting a file handle for reading and writing related files"
+
+  [c thing]
+  (let [h (thing->handle c :related thing)]
+    h))
+
+;; List things
+;;--------------------
 (defn list-groups [config]
   (let [handle (io/file (-> config :datastore :docs))]
     (for [d (.listFiles handle)
@@ -192,13 +126,29 @@
   (let [thing    (ensure-thing thing)
         currentv (thing->version thing) ;; version handle
         current  (:name currentv)       ;; version string
-        added    (:added (read-docs config thing)) ;; version string
+        added    (:added (read-meta config thing)) ;; version string
         versions (list-versions config (:parent currentv))
         unv-path (thing->relative-path :version thing)]
     (for [v     versions
           :when (>= (semver/cmp v added) 0)
           :when (<= (semver/cmp v current) 0)]
       (path->thing (str (thing->path v) "/" unv-path)))))
+
+
+;; Read things
+;;--------------------
+(defn read-notes
+  "Returns a sequence of pairs [version note-text] for all notes on
+  prior or equal versions of the given thing."
+
+  [config thing]
+  (let [thing  (ensure-thing thing)]
+    (for [thing (thing->prior-versions config thing)
+          :let  [v (:name (thing->version thing))
+                 h (thing->handle config :notes thing)]
+          :when (.exists h)
+          :when (.isFile h)]
+      [v (slurp h)])))
 
 (defn read-examples
   "Returns a sequence of pairs [version example-text] for all examples on prior
@@ -213,30 +163,98 @@
           :when (.isFile ex)]
       [v (slurp ex)])))
 
-(defn read-notes
-  "Returns a sequence of pairs [version note-text] for all notes on
-  prior or equal versions of the given thing."
+(defn read-meta [config thing]
+  (let [thing  (ensure-thing thing)
+        handle (thing->meta-handle config thing)]
+    (->> handle slurp edn/read-string)))
+
+(defn read-related
+  "Returns a sequence of things representing symbols related to this or prior
+  versions of the given symbol."
 
   [config thing]
   (let [thing  (ensure-thing thing)]
     (for [thing (thing->prior-versions config thing)
           :let  [v (:name (thing->version thing))
-                 h (thing->notes-handle config thing)]
+                 h (thing->related-handle config thing)]
           :when (.exists h)
-          :when (.isFile h)]
-      [v (slurp h)])))
+          :when (.isFile h)
+          line  (line-seq (io/reader h))]
+      (path->thing line))))
 
 ;; Interacting with the datastore - writing
 ;;--------------------------------------------------------------------
-(defn write-docs
+
+;; FIXME: Remove this update when 1.6 drops
+(defn update
+  "λ [{A → B} A (λ [B args*] → C) args*] → {A → C}
+
+  Updates a key in the map by applying f to the value at that key more
+  arguments, returning the resulting map."
+  [map key f & args]
+  (assoc map key
+         (apply f (get map key) args)))
+
+(defn write-meta
   "Writes a map, being documentation data, into the datastore as specified by
-  config at the def denoted by thing."
+  config at the def denoted by thing. The expectation of this operation is that
+  you just take (meta the-var) and slam it right into write-meta
+
+  Expected keys:
+  - :ns
+  - :name
+  - :doc
+  - :arglists
+  - :src
+  - :added
+  - :column
+  - :line
+  - :file
+
+  Note that this operation cleans the following keys:
+  - :ns   - transformed from a Namespace to a String
+  - :name - transformed from a Symbol to a String"
 
   [config thing data]
   (let [thing  (ensure-thing thing)
         _      (assert thing)
         _      (assert (isa? :def thing))
-        handle (thing->handle config :docs thing)
-        _      (assert handle)]
-    (->> handle io/writer (json/generate-stream data) (.flush))
+        handle (thing->meta-handle config thing)
+        _      (assert handle)
+        data   (-> data
+                   (update :ns ns-name)
+                   (update :ns name)
+                   (update :name name))]
+    (spit handle (pr-str data))
     nil))
+
+(defn write-notes
+  "Writes a string into the datastore specified by the config at the path
+  represented by thing. Note that thing need not be a def."
+
+  [config thing data]
+  {:pre [(string? data)
+         thing
+         config
+         (-> config :datastore :doc)]}
+  (let [thing  (ensure-thing thing)
+        _      (assert thing)
+        handle (thing->handle config nil thing)
+        _      (assert thing)]
+    (spit handle data)))
+
+;; FIXME: add write-example
+
+(defn write-related
+  "Writes a sequence of things representing defs into the datastore's
+  related file as specified by the target thing."
+
+  [config thing related-things]
+  (let [thing  (ensure-thing thing)
+        _      (assert thing)
+        _      (assert (isa? :def thing))
+        handle (thing->related-handle config thing)
+        _      (assert thing)]
+    (doseq [thing related-things]
+      (spit handle (str (thing->path thing) \newline)
+            :append true))))
