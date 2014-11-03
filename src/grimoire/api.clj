@@ -27,18 +27,19 @@
   :examples -> dir"
 
   [{store :datastore} which thing]
-  (let [d (get store which (:docs store))
-        p (io/file (str d "/" (thing->path (:parent thing))))
-        e (case which
-            (:meta)     ".edn"
-            (:related)  ".txt"
-            (:examples) nil
-            (:notes)    ".md"
-            nil)
-        n (if (= :def (:type thing))
-            (util/munge (:name thing))
-            (:name thing))
-        h (io/file p (str n e))]
+  (let [d      (get store which (:docs store))
+        parent (:parent thing)
+        p      (io/file (str d "/" (when parent (thing->path parent))))
+        e      (case which
+                 (:meta)     ".edn"
+                 (:related)  ".txt"
+                 (:examples) nil
+                 (:notes)    ".md"
+                 nil)
+        n      (if (= :def (:type thing))
+                 (util/munge (:name thing))
+                 (:name thing))
+        h      (io/file p (str n e))]
     (.mkdirs p)
     (when (= :examples which)
       (when-not (.isDirectory h)
