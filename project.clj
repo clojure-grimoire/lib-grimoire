@@ -1,4 +1,4 @@
-(defproject org.clojure-grimoire/lib-grimoire "0.1.0-SNAPSHOT"
+(defproject org.clojure-grimoire/lib-grimoire (slurp "VERSION")
   :description "A shared library for Grimoire infrastructure"
   :url "http://github.com/clojure-grimoire/lib-grimoire"
   :license {:name "Eclipse Public License"
