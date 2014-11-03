@@ -1,0 +1,3 @@
+[submodule "bin/hooks"]
+	path = bin/hooks
+	url = git@github.com:arrdem/git-flow-hooks.git
