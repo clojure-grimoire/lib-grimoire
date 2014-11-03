@@ -134,7 +134,6 @@
           :when (<= (semver/cmp v current) 0)]
       (path->thing (str (thing->path v) "/" unv-path)))))
 
-
 ;; Read things
 ;;--------------------
 (defn read-notes
