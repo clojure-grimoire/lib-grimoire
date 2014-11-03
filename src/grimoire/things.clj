@@ -1,4 +1,5 @@
 (ns grimoire.things
+  (:refer-clojure :exclude [isa?])
   (:require [clojure.string :as string]))
 
 (defn isa? [t o]
