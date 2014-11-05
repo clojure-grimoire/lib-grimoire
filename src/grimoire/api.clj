@@ -202,8 +202,9 @@
 
 (defn write-meta
   "Writes a map, being documentation data, into the datastore as specified by
-  config at the def denoted by thing. The expectation of this operation is that
-  you just take (meta the-var) and slam it right into write-meta
+  config at the def denoted by thing. Note that non-readable structures such as
+  Namespaces must be stringified or removed by users. This function provides no
+  sanitization.
 
   Expected keys:
   - :ns       -> string naming the namespace, namespace itself, or a symbol
@@ -224,30 +225,8 @@
   [config thing data]
   (let [thing  (ensure-thing thing)
         _      (assert thing)
-        _      (assert (isa? :def thing))
         handle (thing->meta-handle config thing)
-        _      (assert handle)
-        data   (-> data
-                   (update :ns  (fn [x]
-                                  (cond (instance? clojure.lang.Namespace x)
-                                        ,,(name (ns-name x))
-                                        (string? x)
-                                        ,,x
-                                        (symbol? x)
-                                        ,,(name x)
-                                        :else
-                                        ,,(throw
-                                           (Exception.
-                                            (str "Don't know how to stringify " x))))))
-                   (update :name (fn [x]
-                                   (cond (symbol? x)
-                                         ,,(name x)
-                                         (string? x)
-                                         ,,x
-                                         :else
-                                         ,,(throw
-                                            (Exception.
-                                             (str "Don't know how to stringify " x)))))))]
+        _      (assert handle)]
     (spit handle (pr-str data))
     nil))
 
