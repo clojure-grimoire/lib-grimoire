@@ -206,8 +206,8 @@
   you just take (meta the-var) and slam it right into write-meta
 
   Expected keys:
-  - :ns       -> string naming the namespace
-  - :name     -> string naming the symbol (unmunged)
+  - :ns       -> string naming the namespace, namespace itself, or a symbol
+  - :name     -> string naming the symbol (unmunged), or a symbol
   - :doc      -> documentation string
   - :arglists -> list of argument vectors
   - :src      -> string of source code
@@ -228,9 +228,26 @@
         handle (thing->meta-handle config thing)
         _      (assert handle)
         data   (-> data
-                   (update :ns ns-name)
-                   (update :ns name)
-                   (update :name name))]
+                   (update :ns  (fn [x]
+                                  (cond (instance? clojure.lang.Namespace x)
+                                        ,,(name (ns-name x))
+                                        (string? x)
+                                        ,,x
+                                        (symbol? x)
+                                        ,,(name x)
+                                        :else
+                                        ,,(throw
+                                           (Exception.
+                                            (str "Don't know how to stringify " x))))))
+                   (update :name (fn [x]
+                                   (cond (symbol? x)
+                                         ,,(name x)
+                                         (string? x)
+                                         ,,x
+                                         :else
+                                         ,,(throw
+                                            (Exception.
+                                             (str "Don't know how to stringify " x)))))))]
     (spit handle (pr-str data))
     nil))
 
