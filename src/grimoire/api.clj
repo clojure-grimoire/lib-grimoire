@@ -10,7 +10,6 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.edn :as edn]
-            [cheshire.core :as json]    ; FIXME: remove? in project.clj?
             [clj-semver.core :as semver]))
 
 ;; Interacting with the datastore - reading
@@ -27,19 +26,21 @@
   :examples -> dir"
 
   [{store :datastore} which thing]
-  (let [d      (get store which (:docs store))
-        parent (:parent thing)
-        p      (io/file (str d "/" (when parent (thing->path parent))))
-        e      (case which
-                 (:meta)     ".edn"
-                 (:related)  ".txt"
-                 (:examples) nil
-                 (:notes)    ".md"
-                 nil)
-        n      (if (= :def (:type thing))
-                 (util/munge (:name thing))
-                 (:name thing))
-        h      (io/file p (str n e))]
+  (let [which-store (if-not (= :notes which)
+                      :docs :notes)
+        d           (get store which (which-store store))
+        parent      (:parent thing)
+        p           (io/file (str d "/" (when parent (thing->path parent))))
+        e           (case which
+                      (:meta)     ".edn"
+                      (:related)  ".txt"
+                      (:examples) nil
+                      (:notes)    ".md"
+                      nil)
+        n           (if (= :def (:type thing))
+                      (util/munge (:name thing))
+                      (:name thing))
+        h           (io/file p (str n e))]
     (.mkdirs p)
     (when (= :examples which)
       (when-not (.isDirectory h)
@@ -147,7 +148,7 @@
   (let [thing  (ensure-thing thing)]
     (for [thing (thing->prior-versions config thing)
           :let  [v (:name (thing->version thing))
-                 h (thing->handle config :notes thing)]
+                 h (thing->notes-handle config thing)]
           :when (.exists h)
           :when (.isFile h)]
       [v (slurp h)])))
@@ -200,12 +201,13 @@
 
 (defn write-meta
   "Writes a map, being documentation data, into the datastore as specified by
-  config at the def denoted by thing. The expectation of this operation is that
-  you just take (meta the-var) and slam it right into write-meta
+  config at the def denoted by thing. Note that non-readable structures such as
+  Namespaces must be stringified or removed by users. This function provides no
+  sanitization.
 
-  Expected keys:
-  - :ns       -> string naming the namespace
-  - :name     -> string naming the symbol (unmunged)
+  Expected keys for symbols:
+  - :ns       -> string naming the namespace, namespace itself, or a symbol
+  - :name     -> string naming the symbol (unmunged), or a symbol
   - :doc      -> documentation string
   - :arglists -> list of argument vectors
   - :src      -> string of source code
@@ -215,20 +217,14 @@
   - :file     -> string being file name
   - :type     -> one of #{:macro :fn :var :special}
 
-  Note that this operation cleans the following keys:
-  - :ns   - transformed from a Namespace to a String
-  - :name - transformed from a Symbol to a String"
+  Expected keys for namespace:
+  - :doc      -> documentation string"
 
   [config thing data]
   (let [thing  (ensure-thing thing)
         _      (assert thing)
-        _      (assert (isa? :def thing))
         handle (thing->meta-handle config thing)
-        _      (assert handle)
-        data   (-> data
-                   (update :ns ns-name)
-                   (update :ns name)
-                   (update :name name))]
+        _      (assert handle)]
     (spit handle (pr-str data))
     nil))
 
@@ -243,12 +239,11 @@
          (-> config :datastore :doc)]}
   (let [thing  (ensure-thing thing)
         _      (assert thing)
-        handle (thing->handle config nil thing)
+        handle (thing->notes-handle config thing)
         _      (assert thing)]
     (spit handle data)))
 
 ;; FIXME: add write-example
-
 (defn write-related
   "Writes a sequence of things representing defs into the datastore's
   related file as specified by the target thing."
