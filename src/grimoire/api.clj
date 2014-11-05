@@ -245,7 +245,6 @@
     (spit handle data)))
 
 ;; FIXME: add write-example
-
 (defn write-related
   "Writes a sequence of things representing defs into the datastore's
   related file as specified by the target thing."
