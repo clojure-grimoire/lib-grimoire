@@ -53,13 +53,20 @@
            (interpose "/")
            (apply str))))
 
+(defn ->Group [groupid]
+  (->T :group nil groupid))
+
+(defn ->Artifact [groupid artifactid]
+  (->T :artifact (->Group groupid) artifactid))
+
+(defn ->Version [groupid artifactid version]
+  (->T :version (->Artifact groupid artifactid) version))
+
+(defn ->Ns [groupid artifactid version namespace]
+  (->T :namespace (->Version groupid artifactid version) namespace))
+
 (defn ->Def [groupid artifactid version namespace name]
-  (->> (map vector
-            [:group :artifact :version :namespace :def]
-            [groupid artifactid version namespace name])
-       (reduce (fn [parent [t el]]
-                 (->T t parent el))
-               nil)))
+  (->T :def (->Ns groupid artifactid version namespace) name))
 
 (defn path->thing [path]
   (->> (string/split path #"/")
