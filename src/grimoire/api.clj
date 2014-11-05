@@ -206,7 +206,7 @@
   Namespaces must be stringified or removed by users. This function provides no
   sanitization.
 
-  Expected keys:
+  Expected keys for symbols:
   - :ns       -> string naming the namespace, namespace itself, or a symbol
   - :name     -> string naming the symbol (unmunged), or a symbol
   - :doc      -> documentation string
@@ -218,9 +218,8 @@
   - :file     -> string being file name
   - :type     -> one of #{:macro :fn :var :special}
 
-  Note that this operation cleans the following keys:
-  - :ns   - transformed from a Namespace to a String
-  - :name - transformed from a Symbol to a String"
+  Expected keys for namespace:
+  - :doc      -> documentation string"
 
   [config thing data]
   (let [thing  (ensure-thing thing)
