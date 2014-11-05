@@ -10,7 +10,6 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.edn :as edn]
-            [cheshire.core :as json]    ; FIXME: remove? in project.clj?
             [clj-semver.core :as semver]))
 
 ;; Interacting with the datastore - reading
