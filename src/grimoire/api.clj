@@ -123,19 +123,35 @@
 
 (declare read-meta)
 
-(defn- thing->prior-versions
+;; FIXME: this should really be handled in data generation not in data use
+(defn normalize-version [x]
+  (if-not (re-matches #"[0-9]+.[0-9]+.[0-9]+" x)
+    (str x ".0")
+    x))
+
+(defn thing->prior-versions
   "Returns a sequence of things representing itself at earlier or equal versions."
 
   [config thing]
   (let [thing    (ensure-thing thing)
-        currentv (thing->version thing) ;; version handle
-        current  (:name currentv)       ;; version string
-        added    (:added (read-meta config thing)) ;; version string
-        versions (list-versions config (:parent currentv))
+        currentv (thing->version thing)               ; version handle
+        current  (normalize-version (:name currentv)) ; version string
+        added    (-> config
+                     (read-meta thing)
+                     (get :added "1.0.0")             ; FIXME: added in 1.0.0 by default. OK for core.
+                     normalize-version)               ; version string
+        versions (->> (:parent currentv)
+                      (list-versions config))
         unv-path (thing->relative-path :version thing)]
     (for [v     versions
-          :when (>= (semver/cmp v added) 0)
-          :when (<= (semver/cmp v current) 0)]
+          :when (or (semver/newer? (:name v) added)
+                    (semver/equal? (:name v) added))
+          :when (or (semver/older? (:name v) current)
+                    (semver/equal? (:name v) current))]
+      ;; FIXME: this could be a direct constructor given an
+      ;; appropriate vehicle for doing so since the type is directed
+      ;; and single but may not generally make sense if this is not
+      ;; the case.
       (path->thing (str (thing->path v) "/" unv-path)))))
 
 ;; Read things
