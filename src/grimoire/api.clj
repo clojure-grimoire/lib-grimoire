@@ -184,7 +184,11 @@
 (defn read-meta [config thing]
   (let [thing  (ensure-thing thing)
         handle (thing->meta-handle config thing)]
-    (->> handle slurp edn/read-string)))
+    (when (.exists handle) ;; guard against missing files
+      (-> handle
+          slurp
+          (string/replace #"#<.*?>" "nil") ;; FIXME: Hack to ignore unreadable #<>s
+          edn/read-string))))
 
 (defn read-related
   "Returns a sequence of things representing symbols related to this or prior
