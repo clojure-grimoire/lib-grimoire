@@ -70,7 +70,10 @@
 
 (defn path->thing [path]
   (->> (string/split path #"/")
-       (apply ->Def)))
+       (map vector [:group :artifact :version :namespace :def])
+       (reduce (fn [acc [t v]]
+                 (if v (->T t acc v) acc))
+               nil)))
 
 ;; Manipulating things
 ;;--------------------------------------------------------------------
