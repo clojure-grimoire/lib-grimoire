@@ -51,8 +51,7 @@
   "Helper for grabbing the handle of a notes file "
 
   [c thing]
-  (let [h (thing->handle c :notes thing)]
-    (io/file h "notes.md")))
+  (thing->handle c :notes thing))
 
 (defn- thing->example-handle
   "Helper for getting a file handle for reading and writing a named example."
