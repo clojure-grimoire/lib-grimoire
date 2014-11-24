@@ -34,7 +34,7 @@
         e           (case which
                       (:meta)     ".edn"
                       (:related)  ".txt"
-                      (:examples) nil
+                      (:examples) "/examples/"
                       (:notes)    ".md"
                       nil)
         n           (if (= :def (:type thing))
