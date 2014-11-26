@@ -27,9 +27,9 @@
         p           (io/file (str d "/" (when parent (thing->path parent))))
         e           (case which
                       (:meta)     ".edn"
-                      (:related)  ".txt"
+                      (:related)  "/related.txt"
                       (:examples) "/examples/"
-                      (:notes)    ".md"
+                      (:notes)    "/extended-docstring.md"
                       nil)
         n           (if (= :def (:type thing))
                       (util/munge (:name thing))
