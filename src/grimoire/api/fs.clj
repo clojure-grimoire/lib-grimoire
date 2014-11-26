@@ -176,7 +176,8 @@
   ;; being a sequence of fully qualified symbols not Thing URIs. Will
   ;; work, but not optimal in terms of utility going forwards.
 
-  (let [thing  (ensure-thing thing)]
+  (let [thing           (ensure-thing thing)
+        current-version (thing->version thing)]
     (for [thing (api/thing->prior-versions config thing)
           :let  [v (:name (thing->version thing))
                  h (thing->related-handle config thing)]
@@ -184,7 +185,7 @@
           :when (.isFile h)
           line  (line-seq (io/reader h))
           :let  [sym (read-string line)]]
-      (-> thing
+      (-> current-version
           (->Ns  (namespace sym))
           (->Def (name sym))))))
 
