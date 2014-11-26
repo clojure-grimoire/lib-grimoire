@@ -172,14 +172,21 @@
           edn/read-string))))
 
 (defmethod api/read-related :filesystem [config thing]
+  ;; FIXME: This assumes the old Grimoire 0.3.X related file format,
+  ;; being a sequence of fully qualified symbols not Thing URIs. Will
+  ;; work, but not optimal in terms of utility going forwards.
+
   (let [thing  (ensure-thing thing)]
     (for [thing (api/thing->prior-versions config thing)
           :let  [v (:name (thing->version thing))
                  h (thing->related-handle config thing)]
           :when (.exists h)
           :when (.isFile h)
-          line  (line-seq (io/reader h))]
-      (path->thing line))))
+          line  (line-seq (io/reader h))
+          :let  [sym (read-string line)]]
+      (-> thing
+          (->Ns  (namespace sym))
+          (->Def (name sym))))))
 
 ;; Interacting with the datastore - writing
 ;;--------------------------------------------------------------------
