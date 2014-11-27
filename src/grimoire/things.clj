@@ -72,7 +72,6 @@
         true
         ,,(throw (Exception. "Invalid argument types!"))))
 
-
 (defn ->Version
   ([artifact version]
    {:pre [(and (map? artifact)
