@@ -103,8 +103,8 @@
 (defn ->Def
   ([namespace name]
    {:pre [(and (map? namespace)
-               (= :ns (:type namespace)))
-          (string? namespace)]}
+               (= :namespace (:type namespace)))
+          (string? name)]}
    (->T :def namespace name))
 
   ([groupid artifactid version namespace name]
