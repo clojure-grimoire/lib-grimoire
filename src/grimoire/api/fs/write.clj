@@ -1,14 +1,9 @@
-(ns grimoire.api.fs-write
+(ns grimoire.api.fs.write
   "Filesystem datastore implementation of the Grimoire API."
   (:refer-clojure :exclude [isa?])
-  (:require [grimoire.util :as util]
-            [grimoire.things :refer :all]
+  (:require [grimoire.things :refer :all]
             [grimoire.api :as api]
-            [grimoire.api.fs :refer :all]
-            [clojure.java.io :as io]
-            [clojure.string :as string]
-            [clojure.edn :as edn]
-            [clj-semver.core :as semver]))
+            [grimoire.api.fs :refer :all]))
 
 ;; Interacting with the datastore - writing
 ;;--------------------------------------------------------------------

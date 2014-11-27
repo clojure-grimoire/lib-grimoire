@@ -3,11 +3,7 @@
   (:refer-clojure :exclude [isa?])
   (:require [grimoire.util :as util]
             [grimoire.things :refer :all]
-            [grimoire.api :as api]
-            [clojure.java.io :as io]
-            [clojure.string :as string]
-            [clojure.edn :as edn]
-            [clj-semver.core :as semver]))
+            [clojure.java.io :as io]))
 
 ;; Private helpers for getting fs handles
 ;;--------------------

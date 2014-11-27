@@ -1,8 +1,7 @@
-(ns grimoire.api.fs-read
+(ns grimoire.api.fs.read
   "Filesystem datastore implementation of the Grimoire API."
   (:refer-clojure :exclude [isa?])
-  (:require [grimoire.util :as util]
-            [grimoire.things :refer :all]
+  (:require [grimoire.things :refer :all]
             [grimoire.api :as api]
             [grimoire.api.fs :refer :all]
             [clojure.java.io :as io]
