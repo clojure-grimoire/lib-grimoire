@@ -5,7 +5,8 @@
   different datastores should only need to extend the multimethods in
   this namespace.")
 
-(def dispatch (comp :mode :datastore))
+(defn dispatch [config & more]
+  (-> config :datastore :mode))
 
 ;; Interacting with the datastore - reading
 ;;--------------------------------------------------------------------
