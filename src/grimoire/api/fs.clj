@@ -22,7 +22,7 @@
         parent      (:parent thing)
         p           (io/file (str d "/" (when parent (thing->path parent))))
         e           (case which
-                      (:meta)     ".edn"
+                      (:meta)     "/meta.edn"
                       (:related)  "/related.txt"
                       (:examples) "/examples/"
                       (:notes)    "/extended-docstring.md"
