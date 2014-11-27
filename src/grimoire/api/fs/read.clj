@@ -52,8 +52,8 @@
         _         (assert namespace)
         handle    (thing->handle config :else namespace)]
     (for [d     (.listFiles handle)
-          :when (.isFile d)]
-      (->T :def namespace (string/replace (.getName d) #".edn" "")))))
+          :when (.isDirectory d)]
+      (->T :def namespace (.getName d)))))
 
 ;; FIXME: this should really be handled in data generation not in data use
 (defn- normalize-version [x]
