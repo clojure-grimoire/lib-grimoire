@@ -54,19 +54,66 @@
            (apply str))))
 
 (defn ->Group [groupid]
+  {:pre [(string? groupid)]}
   (->T :group nil groupid))
 
-(defn ->Artifact [groupid artifactid]
-  (->T :artifact (->Group groupid) artifactid))
+(defn ->Artifact
+  [groupid artifactid]
+  {:pre [(or (string? groupid)
+             (and (map? groupid)
+                  (= :group (:type groupid))))
+         (string? artifactid)]}
+  (cond (string? groupid)
+        ,,(recur (->Group groupid) artifactid)
 
-(defn ->Version [groupid artifactid version]
-  (->T :version (->Artifact groupid artifactid) version))
+        (map? groupid)
+        ,,(->T :artifact groupid artifactid)
 
-(defn ->Ns [groupid artifactid version namespace]
-  (->T :namespace (->Version groupid artifactid version) namespace))
+        true
+        ,,(throw (Exception. "Invalid argument types!"))))
 
-(defn ->Def [groupid artifactid version namespace name]
-  (->T :def (->Ns groupid artifactid version namespace) name))
+
+(defn ->Version
+  ([artifact version]
+   {:pre [(and (map? artifact)
+               (= :artifact (:type artifact)))
+          (string? version)]}
+   (->T :version artifact version))
+
+  ([groupid artifactid version]
+   {:pre [(string? groupid)
+          (string? artifactid)
+          (string? version)]}
+   (->Version (->Artifact groupid artifactid) version)))
+
+(defn ->Ns
+  ([version namespace]
+   {:pre [(and (map? version)
+               (= :version (:type version)))
+          (string? namespace)]}
+   (->T :namespace version namespace))
+
+  ([groupid artifactid version namespace]
+   {:pre [(string? groupid)
+          (string? artifactid)
+          (string? version)
+          (string? namespace)]}
+   (->Ns (->Version groupid artifactid version) namespace)))
+
+(defn ->Def
+  ([namespace name]
+   {:pre [(and (map? namespace)
+               (= :ns (:type namespace)))
+          (string? namespace)]}
+   (->T :def namespace name))
+
+  ([groupid artifactid version namespace name]
+   {:pre [(string? groupid)
+          (string? artifactid)
+          (string? version)
+          (string? namespace)
+          (string? name)]}
+   (->Def (->Ns groupid artifactid version namespace) name)))
 
 (defn path->thing [path]
   (->> (string/split path #"/")
