@@ -67,7 +67,7 @@
         current  (normalize-version (:name currentv)) ; version string
         added    (-> config
                      (api/read-meta thing)
-                     (get :added "1.0.0")             ; FIXME: added in 1.0.0 by default. OK for core.
+                     (get :added "0.0.0")
                      normalize-version)               ; version string
         versions (->> (:parent currentv)
                       (api/list-versions config))
