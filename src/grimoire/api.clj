@@ -18,7 +18,6 @@
   {:arglists '[[config]]}
   dispatch)
 
-
 (defmulti list-artifacts
   "Returns a sequence of Thing[:artifact] representing all Maven
   artifacts in the queried datastore that belong to the specified
@@ -51,7 +50,6 @@
   "Returns a sequence of things representing itself at earlier or equal versions."
 
   dispatch)
-
 
 (defmulti read-notes
   "Returns a sequence of pairs [version note-text] for all notes on
