@@ -28,3 +28,9 @@
         versions (api/list-versions test-config a)]
     (is (= ["0.1.0" "0.1.0-SNAPSHOT" "1.0.0" "1.0.1" "1.1.0"]
            (sort (map :name versions))))))
+
+(deftest list-ns-test
+  (let [v    (t/->Version "org.foo" "a" "1.0.0")
+        defs (api/list-namespaces test-config v)]
+    (is (= ["a.core" "a.impl.clj" "a.impl.cljs"]
+           (sort (map :name defs))))))
