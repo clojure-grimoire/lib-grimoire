@@ -30,7 +30,13 @@
            (sort (map :name versions))))))
 
 (deftest list-ns-test
-  (let [v    (t/->Version "org.foo" "a" "1.0.0")
-        defs (api/list-namespaces test-config v)]
+  (let [v   (t/->Version "org.foo" "a" "1.0.0")
+        nss (api/list-namespaces test-config v)]
     (is (= ["a.core" "a.impl.clj" "a.impl.cljs"]
+           (sort (map :name nss))))))
+
+(deftest list-def-test
+  (let [ns (t/->Ns "org.foo" "a" "1.0.0" "a.core")
+        defs (api/list-defs test-config ns)]
+    (is (= ["foo" "qux"]
            (sort (map :name defs))))))
