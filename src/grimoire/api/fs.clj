@@ -25,7 +25,7 @@
                       (:meta)     "/meta.edn"
                       (:related)  "/related.txt"
                       (:examples) "/examples/"
-                      (:notes)    "/extended-docstring.md"
+                      (:notes)    "/notes.md"
                       nil)
         n           (if (= :def (:type thing))
                       (util/munge (:name thing))
