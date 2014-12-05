@@ -7,7 +7,7 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.edn :as edn]
-            [clj-semver.core :as semver]))
+            [version-clj.core :as semver]))
 
 ;; List things
 ;;--------------------
@@ -52,8 +52,8 @@
         _         (assert namespace)
         handle    (thing->handle config :else namespace)]
     (for [d     (.listFiles handle)
-          :when (.isFile d)]
-      (->T :def namespace (string/replace (.getName d) #".edn" "")))))
+          :when (.isDirectory d)]
+      (->T :def namespace (.getName d)))))
 
 ;; FIXME: this should really be handled in data generation not in data use
 (defn- normalize-version [x]
@@ -67,16 +67,14 @@
         current  (normalize-version (:name currentv)) ; version string
         added    (-> config
                      (api/read-meta thing)
-                     (get :added "1.0.0")             ; FIXME: added in 1.0.0 by default. OK for core.
+                     (get :added "0.0.0")
                      normalize-version)               ; version string
         versions (->> (:parent currentv)
                       (api/list-versions config))
         unv-path (thing->relative-path :version thing)]
     (for [v     versions
-          :when (or (semver/newer? (:name v) added)
-                    (semver/equal? (:name v) added))
-          :when (or (semver/older? (:name v) current)
-                    (semver/equal? (:name v) current))]
+          :when (<= 0 (semver/version-compare (:name v) added))
+          :when (>= 0 (semver/version-compare (:name v) current))]
       ;; FIXME: this could be a direct constructor given an
       ;; appropriate vehicle for doing so since the type is directed
       ;; and single but may not generally make sense if this is not
