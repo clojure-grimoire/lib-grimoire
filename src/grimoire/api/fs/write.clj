@@ -20,7 +20,7 @@
   {:pre [(string? data)
          thing
          config
-         (-> config :datastore :doc)]}
+         (-> config :datastore :notes)]}
   (let [thing  (ensure-thing thing)
         _      (assert thing)
         handle (thing->notes-handle config thing)
