@@ -38,6 +38,14 @@
     (is (= ["a.core" "a.impl.clj" "a.impl.cljs"]
            (sort (map :name nss))))))
 
+(deftest list-prior-versions-test
+  (let [ns (t/->Ns "org.foo" "a" "1.0.0" "a.core")
+        defs (api/thing->prior-versions test-config ns)]
+    (is (= ["org.foo/a/0.1.0-SNAPSHOT/a.core"
+            "org.foo/a/0.1.0/a.core"
+            "org.foo/a/1.0.0/a.core"]
+           (sort (map :uri defs))))))
+
 (deftest list-def-test
   (let [ns (t/->Ns "org.foo" "a" "1.0.0" "a.core")
         defs (api/list-defs test-config ns)]
