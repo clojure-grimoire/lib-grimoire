@@ -12,6 +12,9 @@
     :notes "resources/test/notes/"
     :mode  :filesystem}})
 
+;; Listing tests
+;;------------------------------------------------------------------------------
+
 (deftest list-groups-test
   (is (= ["org.bar" "org.foo"]
          (sort (map :name (api/list-groups test-config))))))
@@ -40,3 +43,18 @@
         defs (api/list-defs test-config ns)]
     (is (= ["foo" "qux"]
            (sort (map :name defs))))))
+
+;; Writing tests
+;;------------------------------------------------------------------------------
+
+(deftest write-meta-test
+  (let [n  (rand-int Integer/MAX_VALUE)
+        p  ["org.bar" "b" "1.0.0" "not-qux" "c"]
+        ps (take 5 (iterate butlast p))]
+    (doseq [p ps]
+      (let [path  (apply str (interpose "/" p))
+            thing (t/path->thing path)
+            meta  {:val n}]
+        (api/write-meta test-config thing meta)
+        (is (= (api/read-meta test-config thing)
+               meta))))))
