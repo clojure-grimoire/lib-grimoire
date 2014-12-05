@@ -52,12 +52,13 @@
     (is (= ["foo" "qux"]
            (sort (map :name defs))))))
 
-;; Writing tests
+;; Reading/Writing tests
 ;;------------------------------------------------------------------------------
 
-(deftest write-meta-test
+(def p  ["org.bar" "b" "1.0.0" "not-qux" "c"])
+
+(deftest read-write-meta-test
   (let [n  (rand-int Integer/MAX_VALUE)
-        p  ["org.bar" "b" "1.0.0" "not-qux" "c"]
         ps (take 5 (iterate butlast p))]
     (doseq [p ps]
       (let [path  (apply str (interpose "/" p))
@@ -66,3 +67,16 @@
         (api/write-meta test-config thing meta)
         (is (= (api/read-meta test-config thing)
                meta))))))
+
+(deftest read-write-notes-test
+  (let [n  "Some test notes"
+        ps (take 3 (iterate butlast p))]
+    (doseq [p ps]
+      (let [path  (apply str (interpose "/" p))
+            thing (t/path->thing path)]
+        (api/write-notes test-config thing n)
+        (is (= n
+               (-> test-config
+                   (api/read-notes thing)
+                   first second)))))))
+
