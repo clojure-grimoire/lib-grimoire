@@ -13,8 +13,8 @@
     :mode  :filesystem}})
 
 (deftest list-groups-test
-  (is (= (sort (map :name (api/list-groups test-config)))
-         ["org.bar" "org.foo"])))
+  (is (= ["org.bar" "org.foo"]
+         (sort (map :name (api/list-groups test-config))))))
 
 (deftest list-artifacts-test
   (let [g       (t/->Group "org.foo")
