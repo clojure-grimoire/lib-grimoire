@@ -10,12 +10,14 @@
   symbols. Namespaces, packages, groups and soforth need not be name munged."
   [s]
   (-> s
-      (str/replace "_"    "_USCORE_")
-      (str/replace "?"    "_QMARK_")
-      (str/replace "."    "_DOT_")
-      (str/replace "/"    "_SLASH_")
-      (str/replace #"^_*" "")
-      (str/replace #"_*$" "")))
+      (str/replace "_"     "_USCORE")
+      (str/replace "DOT"   "\\DOT")
+      (str/replace "SLASH" "\\SLASH")
+      (str/replace "QMARK" "\\QMARK")
+      (str/replace "?"     "_QMARK")
+      (str/replace "."     "_DOT")
+      (str/replace "/"     "_SLASH")
+      (str/replace #"_*$"  "")))
 
 (defn update-munge
   "This function attempts to transform the legacy (Grimoire 0.2.X, 0.1.X)
@@ -37,7 +39,10 @@
   careful."
   [s]
   (-> s
-      (str/replace #"_?USCORE_?" "_")
-      (str/replace #"_?QMARK_?"  "?")
-      (str/replace #"_?DOT_?"    ".")
-      (str/replace #"_?SLASH_?"  "/")))
+      (str/replace "\\DOT"    "DOT")
+      (str/replace "\\SLASH"  "SLASH")
+      (str/replace "\\QMARK"  "QMARK")
+      (str/replace #"_USCORE" "_")
+      (str/replace #"_QMARK"  "?")
+      (str/replace #"_DOT"    ".")
+      (str/replace #"_SLASH"  "/")))
