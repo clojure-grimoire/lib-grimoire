@@ -7,7 +7,7 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.edn :as edn]
-            [clj-semver.core :as semver]))
+            [version-clj.core :as semver]))
 
 ;; List things
 ;;--------------------
@@ -73,10 +73,8 @@
                       (api/list-versions config))
         unv-path (thing->relative-path :version thing)]
     (for [v     versions
-          :when (or (semver/newer? (:name v) added)
-                    (semver/equal? (:name v) added))
-          :when (or (semver/older? (:name v) current)
-                    (semver/equal? (:name v) current))]
+          :when (<= 0 (semver/version-compare (:name v) added))
+          :when (>= 0 (semver/version-compare (:name v) current))]
       ;; FIXME: this could be a direct constructor given an
       ;; appropriate vehicle for doing so since the type is directed
       ;; and single but may not generally make sense if this is not
