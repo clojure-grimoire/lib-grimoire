@@ -68,11 +68,11 @@
         currentv (thing->version thing)               ; version handle
         current  (normalize-version (:name currentv)) ; version string
         added    (-> config
-                     (api/read-meta thing)
-                     (get :added "0.0.0")
-                     normalize-version)               ; version string
+                   (api/read-meta thing)
+                   (get :added "0.0.0")
+                   normalize-version)               ; version string
         versions (->> (:parent currentv)
-                      (api/list-versions config))
+                   (api/list-versions config))
         unv-path (thing->relative-path :version thing)]
     (for [v     versions
           :when (<= 0 (semver/version-compare (:name v) added))
@@ -108,9 +108,9 @@
         handle (thing->meta-handle config thing)]
     (when (.exists handle) ;; guard against missing files
       (-> handle
-          slurp
-          (string/replace #"#<.*?>" "nil") ;; FIXME: Hack to ignore unreadable #<>s
-          edn/read-string))))
+        slurp
+        (string/replace #"#<.*?>" "nil") ;; FIXME: Hack to ignore unreadable #<>s
+        edn/read-string))))
 
 (defmethod api/read-related :filesystem [config thing]
   ;; FIXME: This assumes the old Grimoire 0.3.X related file format,
@@ -127,5 +127,5 @@
           line  (line-seq (io/reader h))
           :let  [sym (read-string line)]]
       (-> current-version
-          (->Ns  (namespace sym))
-          (->Def (name sym))))))
+        (->Ns  (namespace sym))
+        (->Def (name sym))))))
