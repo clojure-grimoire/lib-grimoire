@@ -31,9 +31,6 @@
                       (util/munge (:name thing))
                       (:name thing))
         h           (io/file p (str n e))]
-    (.mkdirs (.getParentFile h))
-    (when (= :examples which)
-      (.mkdirs h))
     h))
 
 (defn thing->notes-handle
