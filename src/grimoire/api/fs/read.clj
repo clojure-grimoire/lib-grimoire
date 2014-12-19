@@ -13,7 +13,7 @@
 ;;--------------------
 (defmethod api/list-groups :filesystem [config]
   (let [handle (io/file (-> config :datastore :docs))]
-    (for [d (.listFiles handle)
+    (for [d     (.listFiles handle)
           :when (.isDirectory d)]
       (->T :group nil (.getName d)))))
 
@@ -22,7 +22,7 @@
         thing  (thing->group thing)
         _      (assert thing)
         handle (thing->handle config :else thing)]
-    (for [d (.listFiles handle)
+    (for [d     (.listFiles handle)
           :when (.isDirectory d)]
       (->T :artifact thing (.getName d)))))
 
