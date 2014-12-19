@@ -31,9 +31,11 @@
         artifact (thing->artifact thing)
         _        (assert artifact)
         handle   (thing->handle config :else artifact)]
-    (for [d     (.listFiles handle)
-          :when (.isDirectory d)]
-      (->T :version artifact (.getName d)))))
+    (->> (for [d     (reverse (sort (.listFiles handle)))
+             :when (.isDirectory d)]
+         (->T :version artifact (.getName d)))
+      (sort-by :name)
+      reverse)))
 
 (defmethod api/list-namespaces :filesystem [config thing]
   (let [thing   (ensure-thing thing)
