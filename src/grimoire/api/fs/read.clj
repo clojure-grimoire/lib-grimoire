@@ -9,33 +9,46 @@
             [clojure.edn :as edn]
             [version-clj.core :as semver]))
 
+(defmacro throw-e [& forms]
+  `(throw (Exception. (str ~@forms))))
+
 ;; List things
 ;;--------------------
 (defmethod api/list-groups :filesystem [config]
   (let [handle (io/file (-> config :datastore :docs))]
-    (for [d     (.listFiles handle)
-          :when (.isDirectory d)]
-      (->T :group nil (.getName d)))))
+    (if (.isDirectory handle)
+      (for [d     (.listFiles handle)
+            :when (.isDirectory d)]
+        (->T :group nil (.getName d)))
+      (throw
+       (Exception.
+        "Could not find store directory")))))
 
 (defmethod api/list-artifacts :filesystem [config thing]
   (let [thing  (ensure-thing thing)
         thing  (thing->group thing)
         _      (assert thing)
         handle (thing->handle config :else thing)]
-    (for [d     (.listFiles handle)
-          :when (.isDirectory d)]
-      (->T :artifact thing (.getName d)))))
+    (if (.isDirectory handle)
+      (for [d     (.listFiles handle)
+            :when (.isDirectory d)]
+        (->T :artifact thing (.getName d)))
+      (throw-e "No such group "
+               (:uri thing)))))
 
 (defmethod api/list-versions :filesystem [config thing]
   (let [thing    (ensure-thing thing)
         artifact (thing->artifact thing)
         _        (assert artifact)
         handle   (thing->handle config :else artifact)]
-    (->> (for [d     (reverse (sort (.listFiles handle)))
-             :when (.isDirectory d)]
-         (->T :version artifact (.getName d)))
-      (sort-by :name)
-      reverse)))
+    (if (.isDirectory handle)
+      (->> (for [d     (reverse (sort (.listFiles handle)))
+               :when (.isDirectory d)]
+           (->T :version artifact (.getName d)))
+         (sort-by :name)
+         reverse)
+      (throw-e  "No such artifact "
+                (:uri thing)))))
 
 (defmethod api/list-namespaces :filesystem [config thing]
   (let [thing   (ensure-thing thing)
@@ -43,9 +56,12 @@
         version (thing->version thing)
         _       (assert version)
         handle  (thing->handle config :else version)]
-    (for [d     (.listFiles handle)
-          :when (.isDirectory d)]
-      (->T :namespace version (.getName d)))))
+    (if (.isDirectory handle)
+      (for [d     (.listFiles handle)
+            :when (.isDirectory d)]
+        (->T :namespace version (.getName d)))
+      (throw-e "No such version "
+               (:uri thing)))))
 
 (defmethod api/list-defs :filesystem [config thing]
   (let [thing     (ensure-thing thing)
@@ -53,9 +69,12 @@
         namespace (thing->namespace thing)
         _         (assert namespace)
         handle    (thing->handle config :else namespace)]
-    (for [d     (.listFiles handle)
-          :when (.isDirectory d)]
-      (->T :def namespace (.getName d)))))
+    (if (.isDirectory handle)
+      (for [d     (.listFiles handle)
+            :when (.isDirectory d)]
+        (->T :def namespace (.getName d)))
+      (throw-e "No such namespace "
+               (:uri thing)))))
 
 ;; FIXME: this should really be handled in data generation not in data use
 (defn- normalize-version [x]
@@ -68,11 +87,11 @@
         currentv (thing->version thing)               ; version handle
         current  (normalize-version (:name currentv)) ; version string
         added    (-> config
-                   (api/read-meta thing)
-                   (get :added "0.0.0")
-                   normalize-version)               ; version string
+                    (api/read-meta thing)
+                    (get :added "0.0.0")
+                    normalize-version)               ; version string
         versions (->> (:parent currentv)
-                   (api/list-versions config))
+                    (api/list-versions config))
         unv-path (thing->relative-path :version thing)]
     (for [v     versions
           :when (<= 0 (semver/version-compare (:name v) added))
@@ -108,9 +127,9 @@
         handle (thing->meta-handle config thing)]
     (when (.exists handle) ;; guard against missing files
       (-> handle
-        slurp
-        (string/replace #"#<.*?>" "nil") ;; FIXME: Hack to ignore unreadable #<>s
-        edn/read-string))))
+         slurp
+         (string/replace #"#<.*?>" "nil") ;; FIXME: Hack to ignore unreadable #<>s
+         edn/read-string))))
 
 (defmethod api/read-related :filesystem [config thing]
   ;; FIXME: This assumes the old Grimoire 0.3.X related file format,
@@ -127,5 +146,5 @@
           line  (line-seq (io/reader h))
           :let  [sym (read-string line)]]
       (-> current-version
-        (->Ns  (namespace sym))
-        (->Def (name sym))))))
+         (->Ns  (namespace sym))
+         (->Def (name sym))))))
