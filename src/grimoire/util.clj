@@ -28,3 +28,17 @@
     (str/replace #"_?EQ_?" "=")
     (str/replace #"_?LT_?" "<")
     (str/replace #"_?GT_?" ">")))
+
+(defn succeed [x]
+  [:succeed x])
+
+(defn succeed? [x]
+  {:pre [(seq? x)]}
+  (= :succeed (first x)))
+
+(defn fail [x]
+  [:fail x])
+
+(defn fail? [x]
+  {:pre [(seq? x)]}
+  (= :fail (first x)))
