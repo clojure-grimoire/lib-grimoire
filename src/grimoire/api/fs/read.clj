@@ -109,7 +109,15 @@
 
 ;; Read things
 ;;--------------------
-(defmethod api/read-notes :filesystem [config thing]
+(defn -read-group-notes [config thing]
+  (let [thing (ensure-thing thing)
+        h     (thing->notes-handle config thing)]
+    (if (and (.exists h)
+           (.isFile h))
+      (succeed [[nil (slurp h)]])
+      (fail "No such file"))))
+
+(defn -read-general-notes [config thing]
   (let [thing    (ensure-thing thing)
         versions (api/thing->prior-versions config thing)]
     (if (succeed? versions)
@@ -123,6 +131,11 @@
 
       ;; versions is a Fail, pass it down
       versions)))
+
+(defmethod api/read-notes :filesystem [config thing]
+  (if (#{:group :artifact} (:type thing))
+    (-read-group-notes config thing)
+    (-read-general-notes config thing)))
 
 (defmethod api/read-examples :filesystem [config thing]
   (let [thing    (ensure-thing thing)
@@ -161,16 +174,16 @@
         versions        (api/thing->prior-versions config thing)]
     (if (succeed? versions)
       (-> (for [thing (result versions)
-               :let  [v (:name (thing->version thing))
-                      h (thing->related-handle config thing)]
-               :when (.exists h)
-               :when (.isFile h)
-               line  (line-seq (io/reader h))
-               :let  [sym (read-string line)]]
-           (-> current-version
-              (->Ns  (namespace sym))
-              (->Def (name sym))))
-         succeed)
+                :let  [v (:name (thing->version thing))
+                       h (thing->related-handle config thing)]
+                :when (.exists h)
+                :when (.isFile h)
+                line  (line-seq (io/reader h))
+                :let  [sym (read-string line)]]
+            (-> current-version
+                (->Ns  (namespace sym))
+                (->Def (name sym))))
+          succeed)
 
       ;; versions is a Fail, pass it down
       versions)))
