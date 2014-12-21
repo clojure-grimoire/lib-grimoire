@@ -10,11 +10,11 @@
   symbols. Namespaces, packages, groups and soforth need not be name munged."
   [s]
   (-> s
-    (str/replace "?" "_QMARK_")
-    (str/replace "." "_DOT_")
-    (str/replace "/" "_SLASH_")
-    (str/replace #"^_*" "")
-    (str/replace #"_*$" "")))
+     (str/replace "?" "_QMARK_")
+     (str/replace "." "_DOT_")
+     (str/replace "/" "_SLASH_")
+     (str/replace #"^_*" "")
+     (str/replace #"_*$" "")))
 
 (defn update-munge
   "This function attempts to transform the legacy (Grimoire 0.2.X, 0.1.X)
@@ -22,23 +22,27 @@
   _not_ and unmunge operation."
   [s]
   (-> s
-    (str/replace #"_?DASH_?" "-")
-    (str/replace #"_?BANG_?" "!")
-    (str/replace #"_?STAR_?" "*")
-    (str/replace #"_?EQ_?" "=")
-    (str/replace #"_?LT_?" "<")
-    (str/replace #"_?GT_?" ">")))
+     (str/replace #"_?DASH_?" "-")
+     (str/replace #"_?BANG_?" "!")
+     (str/replace #"_?STAR_?" "*")
+     (str/replace #"_?EQ_?" "=")
+     (str/replace #"_?LT_?" "<")
+     (str/replace #"_?GT_?" ">")))
 
 (defn succeed [x]
   [:succeed x])
 
 (defn succeed? [x]
-  {:pre [(seq? x)]}
+  {:pre [(vector? x)]}
   (= :succeed (first x)))
+
+(defn result [x]
+  {:pre [(succeed? x)]}
+  (second x))
 
 (defn fail [x]
   [:fail x])
 
 (defn fail? [x]
-  {:pre [(seq? x)]}
+  {:pre [(vector? x)]}
   (= :fail (first x)))
