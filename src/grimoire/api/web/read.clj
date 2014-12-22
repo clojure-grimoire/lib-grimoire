@@ -15,7 +15,7 @@
 ;; Interacting with the datastore - reading
 ;;--------------------------------------------------------------------
 
-(def baseurl "http://conj.io/api/v0/")
+(def baseurl "/api/v0/")
 
 (defn grim-succeed? [result]
   (= (:result result) :success))
@@ -23,20 +23,22 @@
 (defn grim-result [result]
   (:body result))
 
-(defn make-request [thing op]
-  (str baseurl (:uri thing) "?op=" op "&type=edn"))
+(defn make-request [config thing op]
+  (println config (:uri thing) op)
+  (str (-> config :datastore :host)
+       baseurl (:uri thing)
+       "?op=" op "&type=edn"))
 
-(defn do-data-req [thing op]
-  (let [?res (->  thing
-                 (make-request op)
-                 slurp
-                 edn/read-string)]
+(defn do-data-req [config thing op]
+  (let [?res (-> (make-request config thing op)
+                slurp
+                edn/read-string)]
     ((if (grim-succeed? ?res)
        succeed fail)
      (grim-result ?res))))
 
-(defn do-thing-req [op ctor parent]
-  (let [?res (do-data-req parent op)]
+(defn do-thing-req [config op ctor parent]
+  (let [?res (do-data-req config parent op)]
     (if (succeed? ?res)
       (->> ?res result
          (map (comp (partial ctor parent) :name))
@@ -44,19 +46,19 @@
       ?res)))
 
 (defmethod api/list-groups :web [config]
-  (do-thing-req "groups" ->Group nil))
+  (do-thing-req config "groups" ->Group nil))
 
 (defmethod api/list-artifacts :web [config group-thing]
-  (do-thing-req "artifacts" ->Artifact group-thing))
+  (do-thing-req config "artifacts" ->Artifact group-thing))
 
 (defmethod api/list-versions :web [config artifact-thing]
-  (do-thing-req "versions" ->Version artifact-thing))
+  (do-thing-req config "versions" ->Version artifact-thing))
 
 (defmethod api/list-namespaces :web [config version-thing]
-  (do-thing-req "namespaces" ->Ns version-thing))
+  (do-thing-req config "namespaces" ->Ns version-thing))
 
 (defmethod api/list-defs :web [config namespace-thing]
-  (do-thing-req "all" ->Def namespace-thing))
+  (do-thing-req config "all" ->Def namespace-thing))
 
 (defmethod api/thing->prior-versions :web [config thing]
   ;; FIXME: this is entirely common to fs/read's thing->versions
@@ -87,21 +89,21 @@
 
 (defmethod api/read-notes :web [config thing]
   {:pre [(isa? :def thing)]}
-  (do-data-req thing "notes"))
+  (do-data-req config thing "notes"))
 
 (defmethod api/read-examples :web [config def-thing]
   {:pre [(isa? :def def-thing)]}
-  (do-data-req def-thing "examples"))
+  (do-data-req config def-thing "examples"))
 
 (defmethod api/read-meta :web [config thing]
-  (do-data-req thing "meta"))
+  (do-data-req config thing "meta"))
 
 (defmethod api/read-related :web [config def-thing]
   {:pre [(isa? :def def-thing)]}
   ;; FIXME: not implemented on the Grimoire side see clojure-grimoire/grimoire#152
   ;; Grimoire will yeild Succeed[Seq[qualifiedSymbol]]
   (let [version (thing->version def-thing)
-        ?res    (do-data-req def-thing "related")]
+        ?res    (do-data-req config def-thing "related")]
     (if (succeed? ?res)
       (->> ?res result
          (map (comp #(path->thing (str (thing->path version) "/" %1)) :name))
