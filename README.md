@@ -94,6 +94,14 @@ include a protocol specifier, and must not end with `"/"`.
 Rate limiting may be applied to this API on the server side in future
 in the form of `Fail`ing requests.
 
+## Hacking
+
+Note that the tests assume an instance of Grimoire 0.4 or later
+running on 127.0.0.1:3000. Patches welcome, be warned that code is
+likely to move out of this repository into
+[var-link.clj](https://github.com/clojure-grimoire/var-link.clj) in
+future releases. PRs and issues welcome. No CA required.
+
 ## License
 
 Copyright © 2014 Reid "arrdem" McKenzie
