@@ -36,7 +36,7 @@
      (grim-result ?res))))
 
 (defn do-thing-req [op ctor parent]
-  (let [?res (do-data-op parent op)]
+  (let [?res (do-data-req parent op)]
     (if (succeed? ?res)
       (->> ?res result
          (map (comp (partial ctor parent) :name))
@@ -87,21 +87,21 @@
 
 (defmethod api/read-notes :web [config thing]
   {:pre [(isa? :def def-thing)]}
-  (do-data-op thing "notes"))
+  (do-data-req thing "notes"))
 
 (defmethod api/read-examples :web [config def-thing]
   {:pre [(isa? :def def-thing)]}
-  (do-data-op def-thing "examples"))
+  (do-data-req def-thing "examples"))
 
 (defmethod api/read-meta :web [config thing]
-  (do-data-op thing "meta"))
+  (do-data-req thing "meta"))
 
 (defmethod api/read-related :web [config def-thing]
   {:pre [(isa? :def def-thing)]}
   ;; FIXME: not implemented on the Grimoire side see clojure-grimoire/grimoire#152
   ;; Grimoire will yeild Succeed[Seq[qualifiedSymbol]]
   (let [version (thing->version def-thing)
-        ?res    (do-data-op def-thing "related")]
+        ?res    (do-data-req def-thing "related")]
     (if (succeed? ?res)
       (->> ?res result
          (map (comp #(path->thing (str (thing->path version) "/" %1)) :name))
