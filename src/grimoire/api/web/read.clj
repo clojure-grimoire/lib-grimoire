@@ -26,50 +26,31 @@
 (defn make-request [thing op]
   (str baseurl (:uri thing) "?op=" op "&type=edn"))
 
-(defmethod api/list-groups :web [config]
-  ;; FIXME: Needs to return a Succeed[Seq[Thing]]
-  (let [?res (->  nil
-                 (make-request "groups")
+(defn do-thing-req [op ctor parent]
+  (let [?res (->  op
+                 (make-request op)
                  slurp
                  edn/read-string)]
     (if (grim-succeed? ?res)
       (->> ?res grim-result
-         (map (comp ->Group :name))
+         (map (comp (partial ctor parent) :name))
          succeed)
       (fail (grim-result ?res)))))
+
+(defmethod api/list-groups :web [config]
+  (do-thing-req "groups" ->Group nil))
 
 (defmethod api/list-artifacts :web [config group-thing]
-  ;; FIXME: Needs to return a Succeed[Seq[Thing]]
-  (let [?res (-> group-thing
-                (make-request "artifacts")
-                slurp
-                edn/read-string)]
-    (if (grim-succeed? ?res)
-      (->> ?res grim-result
-         (map (comp (partial ->Artifact group-thing) :name))
-         succeed)
-      (fail (grim-result ?res)))))
+  (do-thing-req "artifacts" ->Artifact group-thing)
 
 (defmethod api/list-versions :web [config artifact-thing]
-  ;; FIXME: Needs to return a Succeed[Seq[Thing]]
-  (let [?res (-> artifact-thing
-                (make-request "versions")
-                edn/read-string)]
-    ((if (grim-succeed? ?res)
-       succeed fail)
-     (grim-result ?res))))
+  (do-thing-req "versions" ->Version artifact-thing))
 
 (defmethod api/list-namespaces :web [config version-thing]
-  ;; FIXME: Needs to return a Succeed[Seq[Thing]]
-  (-> version-thing
-     (make-request "namespaces")
-     edn/read-string))
+  (do-thing-req "namespaces" ->Ns version-thing)))
 
 (defmethod api/list-defs :web [config namespace-thing]
-  ;; FIXME: Needs to return a Succeed[Seq[Thing]]
-  (-> namespace-thing
-     (make-request "all")
-     edn/read-string))
+  (do-thing-req "all" ->Def namespace-thing))
 
 (defmethod api/thing->prior-versions :web [config thing]
   {:pre [(#{:version :namespace :def} (:type thing))]}
