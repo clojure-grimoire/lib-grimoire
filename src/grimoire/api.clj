@@ -47,7 +47,9 @@
   dispatch)
 
 (defmulti thing->prior-versions
-  "Returns a sequence of things representing itself at earlier or equal versions."
+  "Returns a sequence of things representing itself at earlier or equal
+  versions. Note that this op only supports Versions, Namespaces and
+  Defs. Artifacts and Groups do not have versions."
 
   {:arglists '[[config thing]]}
   dispatch)
@@ -63,7 +65,7 @@
   "Returns a sequence of pairs [version example-text] for all examples on prior
   or equal versions of the given thing."
 
-  {:arglists '[[config thing]]}
+  {:arglists '[[config def-thing]]}
   dispatch)
 
 (defmulti read-meta
