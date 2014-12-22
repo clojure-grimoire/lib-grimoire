@@ -53,7 +53,7 @@
   (do-thing-req "versions" ->Version artifact-thing))
 
 (defmethod api/list-namespaces :web [config version-thing]
-  (do-thing-req "namespaces" ->Ns version-thing)))
+  (do-thing-req "namespaces" ->Ns version-thing))
 
 (defmethod api/list-defs :web [config namespace-thing]
   (do-thing-req "all" ->Def namespace-thing))
