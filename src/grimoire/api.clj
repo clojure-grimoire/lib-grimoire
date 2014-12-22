@@ -49,6 +49,7 @@
 (defmulti thing->prior-versions
   "Returns a sequence of things representing itself at earlier or equal versions."
 
+  {:arglists '[[config thing]]}
   dispatch)
 
 (defmulti read-notes
