@@ -3,7 +3,7 @@
   (:refer-clojure :exclude [isa?])
   (:require [grimoire.things :refer :all]
             [grimoire.api :as api]
-            [grimoire.util :refer [succeed result fail succeed?]]
+            [grimoire.util :refer [normalize-version succeed result fail succeed?]]
             [grimoire.api.fs :refer :all]
             [clojure.java.io :as io]
             [clojure.string :as string]
@@ -76,12 +76,6 @@
          succeed)
       (fail (str "No such namespace "
                  (:uri thing))))))
-
-;; FIXME: this should really be handled in data generation not in data use
-(defn- normalize-version [x]
-  (if-not (re-matches #"[0-9]+.[0-9]+.[0-9]+" x)
-    (str x ".0")
-    x))
 
 (defmethod api/thing->prior-versions :filesystem [config thing]
   (let [thing    (ensure-thing thing)

@@ -53,9 +53,13 @@
            (interpose "/")
            (apply str))))
 
-(defn ->Group [groupid]
-  {:pre [(string? groupid)]}
-  (->T :group nil groupid))
+(defn ->Group
+  ([groupid]
+   {:pre [(string? groupid)]}
+   (->T :group nil groupid))
+
+  ([_parent groupid]
+   (->Group groupid)))
 
 (defn ->Artifact
   [groupid artifactid]
