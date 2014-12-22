@@ -85,33 +85,25 @@
       ;; versions is a Fail, pass it down
       versions)))
 
-(defmethod api/thing->prior-versions :web [config thing]
-  ;; FIXME: Needs to return a Succeed[Seq[Thing]]
-  ;; FIXME
-  )
-
 (defmethod api/read-notes :web [config thing]
-  ;; FIXME: Needs to return a Succeed[Map]
-  (-> thing
-     (make-request "notes")
-     edn/read-string))
+  {:pre [(isa? :def def-thing)]}
+  (do-data-op thing "notes"))
 
 (defmethod api/read-examples :web [config def-thing]
-  ;; FIXME: Needs to return a Succeed[Seq[Example]]
-  ;; FIXME: should check that def-thing is a def
-  (-> def-thing
-     (make-request "examples")
-     edn/read-string))
+  {:pre [(isa? :def def-thing)]}
+  (do-data-op def-thing "examples"))
 
 (defmethod api/read-meta :web [config thing]
-  ;; FIXME: Needs to return a Succeed[Meta]
-  (-> thing
-     (make-request "meta")
-     edn/read-string))
+  (do-data-op thing "meta"))
 
 (defmethod api/read-related :web [config def-thing]
-  ;; FIXME: Needs to return a Succeed[Seq[Thing]]
-  ;; FIXME: should check that def-thing is a def
+  {:pre [(isa? :def def-thing)]}
   ;; FIXME: not implemented on the Grimoire side see clojure-grimoire/grimoire#152
-  (-> def-thing
-     (make-request "related")))
+  ;; Grimoire will yeild Succeed[Seq[qualifiedSymbol]]
+  (let [version (thing->version def-thing)
+        ?res    (do-data-op def-thing "related")]
+    (if (succeed? ?res)
+      (->> ?res result
+         (map (comp #(path->thing (str (thing->path version) "/" %1)) :name))
+         succeed)
+      ?res)))
