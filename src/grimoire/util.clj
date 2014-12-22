@@ -46,3 +46,10 @@
 (defn fail? [x]
   {:pre [(vector? x)]}
   (= :fail (first x)))
+
+;; FIXME: this should really be handled in data generation not in data use
+(defn normalize-version [x]
+  (if-not (re-matches #"[0-9]+.[0-9]+.[0-9]+" x)
+    (str x ".0")
+    x))
+
