@@ -47,7 +47,7 @@
   (do-thing-req "groups" ->Group nil))
 
 (defmethod api/list-artifacts :web [config group-thing]
-  (do-thing-req "artifacts" ->Artifact group-thing)
+  (do-thing-req "artifacts" ->Artifact group-thing))
 
 (defmethod api/list-versions :web [config artifact-thing]
   (do-thing-req "versions" ->Version artifact-thing))
