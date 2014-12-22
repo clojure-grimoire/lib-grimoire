@@ -26,16 +26,22 @@
 (defn make-request [thing op]
   (str baseurl (:uri thing) "?op=" op "&type=edn"))
 
-(defn do-thing-req [op ctor parent]
-  (let [?res (->  op
+(defn do-data-req [thing op]
+  (let [?res (->  thing
                  (make-request op)
                  slurp
                  edn/read-string)]
-    (if (grim-succeed? ?res)
-      (->> ?res grim-result
+    ((if (grim-succeed? ?res)
+       succeed fail)
+     (grim-result ?res))))
+
+(defn do-thing-req [op ctor parent]
+  (let [?res (do-data-op parent op)]
+    (if (succeed? ?res)
+      (->> ?res result
          (map (comp (partial ctor parent) :name))
          succeed)
-      (fail (grim-result ?res)))))
+      ?res)))
 
 (defmethod api/list-groups :web [config]
   (do-thing-req "groups" ->Group nil))
