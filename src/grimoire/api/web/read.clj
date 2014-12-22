@@ -24,7 +24,6 @@
   (:body result))
 
 (defn make-request [config thing op]
-  (println config (:uri thing) op)
   (str (-> config :datastore :host)
        baseurl (:uri thing)
        "?op=" op "&type=edn"))
