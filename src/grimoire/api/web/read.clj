@@ -86,7 +86,7 @@
       versions)))
 
 (defmethod api/read-notes :web [config thing]
-  {:pre [(isa? :def def-thing)]}
+  {:pre [(isa? :def thing)]}
   (do-data-req thing "notes"))
 
 (defmethod api/read-examples :web [config def-thing]
