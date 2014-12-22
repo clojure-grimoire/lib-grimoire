@@ -1,3 +1,6 @@
+[![Latest release](http://img.shields.io/github/tag/clojure-grimoire/lib-grimoire.svg)](https://clojars.org/org.clojure-grimoire/lib-grimoire)
+[![Gittip button](http://img.shields.io/gittip/arrdem.svg)](https://www.gittip.com/arrdem/ "Support this project")
+
 # Lib-Grimoire
 
 A small library for sharing code between
@@ -9,6 +12,8 @@ Maven entity and a set of operations on various backends for reading
 and writing data using these entities.
 
 ## Usage
+
+`[org.clojure-grimoire/lib-grimoire $LATEST]` (see latest badge).
 
 Entities (`grimoire.things`
 [docs](http://conj.io/store/clojure-grimoire/lib-grimoire/latest/grimoire.things))
