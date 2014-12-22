@@ -106,6 +106,6 @@
         ?res    (do-data-req config def-thing "related")]
     (if (succeed? ?res)
       (->> ?res result
-         (map (comp #(path->thing (str (thing->path version) "/" %1)) :name))
+         (map (comp path->thing :uri))
          succeed)
       ?res)))
