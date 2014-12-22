@@ -53,11 +53,13 @@
   (do-thing-req "all" ->Def namespace-thing))
 
 (defmethod api/thing->prior-versions :web [config thing]
+  ;; FIXME: this is entirely common to fs/read's thing->versions
   {:pre [(#{:version :namespace :def} (:type thing))]}
   (let [thing    (ensure-thing thing)
         currentv (thing->version thing)               ; version handle
         current  (normalize-version (:name currentv)) ; version string
-        added    (-> (api/read-meta config thing)
+        added    (-> (api/read-meta config thing)      ; FIXME: can Fail
+                    result                            ; FIXME: can throw AssertionException
                     (get :added "0.0.0")
                     normalize-version)                ; version string
         versions (->> (:parent currentv)
