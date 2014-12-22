@@ -1,10 +1,21 @@
 (ns grimoire.api.web.read
-  "This namespace implements the reading and listing parts of the
-  Grimoire API using the Grimoire webservice as its backend.
+  "This namespace implements the reading and listing parts of the Grimoire API
+  using the Grimoire webservice as its backend.
 
   Writing to this datastore is not supported yet™.
   `list-classes` is not supported yet™.
-  `list-defs` lists all defs, not just defs of a type."
+  `list-defs` lists all defs, not just defs of a type.
+
+  To use this backend, you will need to load this namespace, and then invoke the
+  API with a configuration map as follows:
+  
+  {:datastore
+   {:mode :web,
+    :host \"http://conj.io\"}
+
+  Note that the host need not be conj.io, but must host a Grimoire 0.4 or later
+  instance providing the v0 API. The host string should include a http or https
+  protocol specifier as appropriate and should not end in a /."
   (:refer-clojure :exclude [isa?])
   (:require [grimoire.api :as api]
             [grimoire.util :refer [normalize-version succeed? result succeed fail]]
