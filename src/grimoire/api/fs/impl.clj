@@ -1,5 +1,7 @@
-(ns grimoire.api.fs
-  "Filesystem datastore implementation of the Grimoire API."
+(ns grimoire.api.fs.impl
+  "Filesystem datastore implementation details. This namespace is not part of
+  the intentional API exposed in `grimoire.api` and should not be used by
+  library client code."
   (:refer-clojure :exclude [isa?])
   (:require [grimoire.util :as util]
             [grimoire.things :refer :all]
