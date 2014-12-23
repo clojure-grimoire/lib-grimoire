@@ -89,6 +89,13 @@
   dispatch)
 
 (defmulti read-meta
+  "Succeeds returning a Map being the metadata for the specified Thing. No
+  backtracking is done to find metadata on prior Versions of the given
+  Thing. Fails if the given Thing does not exist.
+
+  Note that per the API contract, failure to find a metadata descriptor for a
+  Thing is equivalent to its absence even if other data bout the Thing could be
+  found."
 
   {:arglists '[[config thing]]}
   dispatch)
