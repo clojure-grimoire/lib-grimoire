@@ -3,7 +3,12 @@
   up examples, symbols, namespaces and artifacts as values without
   regard to the implementation of the datastore. Ports of Grimoire to
   different datastores should only need to extend the multimethods in
-  this namespace.")
+  this namespace.
+
+  API Contract assumptions:
+  
+  - Everything has metadata, even if it's nil. If metadata for a Thing
+    cannot be found, then the Thing itself is not in the datastore.")
 
 (defn dispatch [config & more]
   (-> config :datastore :mode))
