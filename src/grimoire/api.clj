@@ -84,11 +84,15 @@
   {:arglists '[[config thing]]}
   dispatch)
 
+;; FIXME: Examples on Namespaces? Artifacts?
 (defmulti read-examples
   "Succeeds with a result Seq[Tuple[version, example-text]] for all examples on
   prior or equal versions of the given thing sorted in decending version
   order. Will Fail if the given Def does not exist, or if a nested Failure is
-  encountered."
+  encountered.
+
+  Note that future versions of this API may extend examples to Namespaces and
+  Artifacts."
 
   {:arglists '[[config def-thing]]}
   dispatch)
