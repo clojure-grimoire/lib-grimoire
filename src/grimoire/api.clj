@@ -71,8 +71,10 @@
   dispatch)
 
 (defmulti read-notes
-  "Returns a sequence of pairs [version note-text] for all notes on
-  prior or equal versions of the given thing."
+  "Succeeds with a result Seq[Tuple[Version, String]] being all notes on prior
+  or equal versions of the given thing sorted in decending version order. Will
+  Fail if the given Thing does not exist, or if a nested Failure is
+  encountered."
 
   {:arglists '[[config thing]]}
   dispatch)
