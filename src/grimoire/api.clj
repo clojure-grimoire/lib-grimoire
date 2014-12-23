@@ -80,8 +80,10 @@
   dispatch)
 
 (defmulti read-examples
-  "Returns a sequence of pairs [version example-text] for all examples on prior
-  or equal versions of the given thing."
+  "Succeeds with a result Seq[Tuple[version, example-text]] for all examples on
+  prior or equal versions of the given thing sorted in decending version
+  order. Will Fail if the given Def does not exist, or if a nested Failure is
+  encountered."
 
   {:arglists '[[config def-thing]]}
   dispatch)
