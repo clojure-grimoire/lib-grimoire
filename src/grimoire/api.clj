@@ -38,6 +38,9 @@
   dispatch)
 
 (defmulti list-namespaces
+  "Succeeds with a result Seq[Namespace] representing all Clojure namespaces in
+  the specified Version. Could succeed with an empty result. Fails if the
+  specified Version does not exist or if another Failure is encountered."
 
   {:arglists '[[config version-thing]]}
   dispatch)
