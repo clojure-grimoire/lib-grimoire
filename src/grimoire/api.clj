@@ -12,8 +12,9 @@
 ;;--------------------------------------------------------------------
 
 (defmulti list-groups
-  "Returns a sequence of Thing[:group] representing all Maven groups
-  in the queried datastore."
+  "Succeeds with a result Seq[Group] representing all Maven groups in the
+  queried datastore. Will succeed with an empty result if there are no known
+  groups. Fails if the datstore isn't correctly configured or missing."
 
   {:arglists '[[config]]}
   dispatch)
