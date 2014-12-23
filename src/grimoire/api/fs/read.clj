@@ -4,7 +4,7 @@
   (:require [grimoire.things :refer :all]
             [grimoire.api :as api]
             [grimoire.util :refer [normalize-version succeed result fail succeed?]]
-            [grimoire.api.fs :refer :all]
+            [grimoire.api.fs.impl :refer :all]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.edn :as edn]

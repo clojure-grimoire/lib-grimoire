@@ -3,7 +3,7 @@
   (:refer-clojure :exclude [isa?])
   (:require [grimoire.things :refer :all]
             [grimoire.api :as api]
-            [grimoire.api.fs :refer :all]))
+            [grimoire.api.fs.impl :refer :all]))
 
 ;; Interacting with the datastore - writing
 ;;--------------------------------------------------------------------

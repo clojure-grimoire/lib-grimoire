@@ -2,7 +2,6 @@
   (:require [grimoire.api :as api]
             [grimoire.things :as t]
             [grimoire.util :refer [result]]
-            [grimoire.api.fs]
             [grimoire.api.fs.read]
             [grimoire.api.fs.write]
             [clojure.test :refer :all]))
