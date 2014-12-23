@@ -54,7 +54,10 @@
   dispatch)
 
 (defmulti list-defs
-
+  "Succeeds with a result Seq[Def] representing all Clojure defs in the
+  specified Namespace. Could succeed with an empty result. Fails if the
+  specified Namespace does not exist or if another failure is encountered."
+  
   {:arglists '[[config namespace-thing]]}
   dispatch)
 
