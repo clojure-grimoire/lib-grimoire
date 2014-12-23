@@ -19,9 +19,10 @@
   dispatch)
 
 (defmulti list-artifacts
-  "Returns a sequence of Thing[:artifact] representing all Maven
-  artifacts in the queried datastore that belong to the specified
-  Thing[:group]."
+  "Succeeds yielding a sequence of Thing[:artifact] representing all Maven
+  artifacts in the queried datastore that belong to the specified Group. Will
+  Succeed with an empty result if there are no known artifacts. Fails if the
+  group is unknown or if another exception is encountered."
   
   {:arglists '[[config group-thing]]}
   dispatch)
