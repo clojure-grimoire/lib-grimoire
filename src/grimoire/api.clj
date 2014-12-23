@@ -110,8 +110,12 @@
   dispatch)
 
 (defmulti read-related
-  "Returns a sequence of things representing symbols related to this or prior
-  versions of the given symbol."
+  "Succeeds with a result Seq[Def] being the sequence of Things \"related\"
+  according to the documentation writer to the Thing for which related entities
+  was requested.
+
+  As of 0.6.X, this operation is only defined over Defs, however future versions
+  of this API may extend this operation to other types."
 
   {:arglists '[[config thing]]}
   dispatch)
