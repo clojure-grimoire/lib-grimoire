@@ -62,9 +62,10 @@
   dispatch)
 
 (defmulti thing->prior-versions
-  "Returns a sequence of things representing itself at earlier or equal
-  versions. Note that this op only supports Versions, Namespaces and
-  Defs. Artifacts and Groups do not have versions."
+  "Succeeds with a result Seq[Thing] representing the argument Thing at earlier
+  or equal versions sorted in decending order. Note that this op only supports
+  Versions, Namespaces and Defs. Artifacts and Groups do not have versions, and
+  will give Failures."
 
   {:arglists '[[config thing]]}
   dispatch)
