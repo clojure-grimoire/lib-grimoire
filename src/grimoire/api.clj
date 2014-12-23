@@ -65,7 +65,7 @@
   "Succeeds with a result Seq[Thing] representing the argument Thing at earlier
   or equal versions sorted in decending order. Note that this op only supports
   Versions, Namespaces and Defs. Artifacts and Groups do not have versions, and
-  will give Failures."
+  will give Failures. Will Fail if a nested Failure is encountered."
 
   {:arglists '[[config thing]]}
   dispatch)
