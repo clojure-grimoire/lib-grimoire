@@ -29,6 +29,10 @@
   dispatch)
 
 (defmulti list-versions
+  "Succeeds with a result Seq[Version] representing all Maven versions in the
+  queried datastore of the specified Artifact. Could succeed with an empty
+  result if there are no known versions. Fails if the specified Artifact does
+  not exist or if another Failure is encountered."
 
   {:arglists '[[config artifact-thing]]}
   dispatch)
