@@ -46,6 +46,9 @@
   dispatch)
 
 (defmulti list-classes
+  "Succeeds with a result Seq[Class] representing all Java classes in the
+  specified Version. Could succeed with an empty result. Fails if the specified
+  Version does not exist or of another failure is encountered."
   
   {:arglists '[[config version-thing]]}
   dispatch)
