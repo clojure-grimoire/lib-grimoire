@@ -29,7 +29,11 @@
 
 (def baseurl "/api/v0/")
 
-(defn grim-succeed? [result]
+(defn grim-succeed?
+  "λ [t] → Bool
+
+  Helper, indicates whether a Grimoire web result succeeded or failed."
+  [result]
   (= (:result result) :success))
 
 (defn grim-result [result]
