@@ -52,7 +52,13 @@
        baseurl (:uri thing)
        "?op=" op "&type=edn"))
 
-(defn do-data-req [config thing op]
+(defn do-data-req
+  "λ [Cfg → Thing → Op] → Either[Success[t], Failure[String]]
+
+  Forges and executes a data request agains the Grimoire web API as specified by
+  the various arguments. Returns the entire result of the Grimoire request
+  unaltered and wrapped in Either."
+  [config thing op]
   {:post [either?]}
   (let [?res (-> (make-request config thing op)
                 slurp
