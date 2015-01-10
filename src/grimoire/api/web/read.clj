@@ -67,7 +67,13 @@
        succeed fail)
      (grim-result ?res))))
 
-(defn do-thing-req [config op ctor parent]
+(defn do-thing-req
+  "λ [Cfg → Op → (λ [p → String] → c) → p] → Either[Success[Seq[c]], Failure[String]]
+
+  Helper, does a data request against the Grimoire web API as specified by the
+  config and op, running the request results through the constructor to yield a
+  seq of Things as constructed from the pair (parent, (:name result))."
+  [config op ctor parent]
   (let [?res (do-data-req config parent op)]
     (if (succeed? ?res)
       (->> ?res result
