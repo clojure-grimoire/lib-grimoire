@@ -3,7 +3,7 @@
   (:refer-clojure :exclude [isa?])
   (:require [grimoire.things :refer :all]
             [grimoire.api :as api]
-            [grimoire.api.fs :refer :all]))
+            [grimoire.api.fs.impl :refer :all]))
 
 ;; Interacting with the datastore - writing
 ;;--------------------------------------------------------------------
@@ -13,6 +13,7 @@
         _      (assert thing)
         handle (thing->meta-handle config thing)
         _      (assert handle)]
+    (.mkdirs (.getParentFile handle))
     (spit handle (pr-str data))
     nil))
 
@@ -25,6 +26,7 @@
         _      (assert thing)
         handle (thing->notes-handle config thing)
         _      (assert thing)]
+    (.mkdirs (.getParentFile handle))
     (spit handle data)))
 
 ;; FIXME: add write-example
@@ -35,6 +37,7 @@
         _      (assert (isa? :def thing))
         handle (thing->related-handle config thing)
         _      (assert thing)]
+    (.mkdirs (.getParentFile handle))
     (doseq [thing related-things]
       (spit handle (str (thing->path thing) \newline)
             :append true))))

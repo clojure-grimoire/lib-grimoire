@@ -3,7 +3,12 @@
   up examples, symbols, namespaces and artifacts as values without
   regard to the implementation of the datastore. Ports of Grimoire to
   different datastores should only need to extend the multimethods in
-  this namespace.")
+  this namespace.
+
+  API Contract assumptions:
+  
+  - Everything has metadata, even if it's nil. If metadata for a Thing
+    cannot be found, then the Thing itself is not in the datastore.")
 
 (defn dispatch [config & more]
   (-> config :datastore :mode))
@@ -12,67 +17,105 @@
 ;;--------------------------------------------------------------------
 
 (defmulti list-groups
-  "Returns a sequence of Thing[:group] representing all Maven groups
-  in the queried datastore."
+  "Succeeds with a result Seq[Group] representing all Maven groups in the
+  queried datastore. Will succeed with an empty result if there are no known
+  groups. Fails if the datstore isn't correctly configured or missing."
 
   {:arglists '[[config]]}
   dispatch)
 
 (defmulti list-artifacts
-  "Returns a sequence of Thing[:artifact] representing all Maven
-  artifacts in the queried datastore that belong to the specified
-  Thing[:group]."
+  "Succeeds with a result Seq[Artifact] representing all Maven artifacts in the
+  queried datastore that belong to the specified Group. Will Succeed with an
+  empty result if there are no known artifacts. Fails if the group is unknown or
+  if another Failure is encountered."
   
   {:arglists '[[config group-thing]]}
   dispatch)
 
 (defmulti list-versions
+  "Succeeds with a result Seq[Version] representing all Maven versions in the
+  queried datastore of the specified Artifact. Could succeed with an empty
+  result if there are no known versions. Fails if the specified Artifact does
+  not exist or if another Failure is encountered."
 
   {:arglists '[[config artifact-thing]]}
   dispatch)
 
 (defmulti list-namespaces
+  "Succeeds with a result Seq[Namespace] representing all Clojure namespaces in
+  the specified Version. Could succeed with an empty result. Fails if the
+  specified Version does not exist or if another Failure is encountered."
 
   {:arglists '[[config version-thing]]}
   dispatch)
 
 (defmulti list-classes
+  "Succeeds with a result Seq[Class] representing all Java classes in the
+  specified Version. Could succeed with an empty result. Fails if the specified
+  Version does not exist or of another failure is encountered."
   
   {:arglists '[[config version-thing]]}
   dispatch)
 
 (defmulti list-defs
-
+  "Succeeds with a result Seq[Def] representing all Clojure defs in the
+  specified Namespace. Could succeed with an empty result. Fails if the
+  specified Namespace does not exist or if another failure is encountered."
+  
   {:arglists '[[config namespace-thing]]}
   dispatch)
 
 (defmulti thing->prior-versions
-  "Returns a sequence of things representing itself at earlier or equal versions."
+  "Succeeds with a result Seq[Thing] representing the argument Thing at earlier
+  or equal versions sorted in decending order. Note that this op only supports
+  Versions, Namespaces and Defs. Artifacts and Groups do not have versions, and
+  will give Failures. Will Fail if a nested Failure is encountered."
 
+  {:arglists '[[config thing]]}
   dispatch)
 
 (defmulti read-notes
-  "Returns a sequence of pairs [version note-text] for all notes on
-  prior or equal versions of the given thing."
+  "Succeeds with a result Seq[Tuple[Version, String]] being all notes on prior
+  or equal versions of the given thing sorted in decending version order. Will
+  Fail if the given Thing does not exist, or if a nested Failure is
+  encountered."
 
   {:arglists '[[config thing]]}
   dispatch)
 
+;; FIXME: Examples on Namespaces? Artifacts?
 (defmulti read-examples
-  "Returns a sequence of pairs [version example-text] for all examples on prior
-  or equal versions of the given thing."
+  "Succeeds with a result Seq[Tuple[version, example-text]] for all examples on
+  prior or equal versions of the given thing sorted in decending version
+  order. Will Fail if the given Def does not exist, or if a nested Failure is
+  encountered.
 
-  {:arglists '[[config thing]]}
+  Note that future versions of this API may extend examples to Namespaces and
+  Artifacts."
+
+  {:arglists '[[config def-thing]]}
   dispatch)
 
 (defmulti read-meta
+  "Succeeds returning a Map being the metadata for the specified Thing. No
+  backtracking is done to find metadata on prior Versions of the given
+  Thing. Fails if the given Thing does not exist.
+
+  Note that per the API contract, failure to find a metadata descriptor for a
+  Thing is equivalent to its absence even if other data bout the Thing could be
+  found."
 
   {:arglists '[[config thing]]}
   dispatch)
 
 (defmulti read-related
-  "Returns a sequence of things representing symbols related to this or prior
-  versions of the given symbol."
+  "Succeeds with a result Seq[Def] being the sequence of Things \"related\"
+  according to the documentation writer to the Thing for which related entities
+  was requested.
+
+  As of 0.6.X, this operation is only defined over Defs, however future versions
+  of this API may extend this operation to other types."
 
   {:arglists '[[config thing]]}
   dispatch)
