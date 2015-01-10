@@ -43,7 +43,11 @@
   [result]
   (:body result))
 
-(defn make-request [config thing op]
+(defn make-request
+  "λ [Cfg → Thing → Op] → String
+
+  Forges a Grimoire API V0 request for a given Thing and Op."
+  [config thing op]
   (str (-> config :datastore :host)
        baseurl (:uri thing)
        "?op=" op "&type=edn"))
