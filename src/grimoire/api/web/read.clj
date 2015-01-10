@@ -81,6 +81,9 @@
          succeed)
       ?res)))
 
+;; API imp'l
+;;--------------------------------------------------------------------
+
 (defn list-groups
   "Implementation of grimoire.api/list-groups. This function should not be used
   directly, please use the wrapper multimethod in grimoire.api."
