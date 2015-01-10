@@ -36,7 +36,11 @@
   [result]
   (= (:result result) :success))
 
-(defn grim-result [result]
+(defn grim-result
+  "λ [t] → y
+
+  Helper, destructures out the body of a Grimoire web result."
+  [result]
   (:body result))
 
 (defn make-request [config thing op]
