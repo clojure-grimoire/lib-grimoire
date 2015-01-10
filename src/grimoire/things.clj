@@ -126,7 +126,7 @@
 (defn thing->relative-path [t thing]
   (->> thing
        (iterate :parent)
-       (take-while #(not (= (:type %1) t)))
+       (take-while #(not= (:type %1) t))
        (reverse)
        (map :name)
        (interpose "/")
@@ -137,7 +137,7 @@
        (iterate :parent)
        (take-while identity)
        (reverse)
-       (take-while #(not (= (:type %1) t)))
+       (take-while #(not= (:type %1) t))
        (map :name)
        (interpose "/")
        (apply str)))
