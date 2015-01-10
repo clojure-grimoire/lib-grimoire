@@ -15,18 +15,24 @@ and writing data using these entities.
 
 [![Clojars Project](http://clojars.org/org.clojure-grimoire/lib-grimoire/latest-version.svg)](http://clojars.org/org.clojure-grimoire/lib-grimoire)
 
-Entities (`grimoire.things`
-[docs](http://conj.io/store/org.clojure-grimoire/lib-grimoire/latest/grimoire.things))
-are defined as follows:
+Things are a structure used for uniquely naming versioned, vendored,
+platformed definitons and all parent structures thereof. Defined in
+`grimoire.things`
+[docs](http://conj.io/store/org.clojure-grimoire/lib-grimoire/latest/grimoire.things)
+as follows:
 
 ```
-Thing     ::= Sum[Group, Artifact, Version, Namespace, Def];
+Thing     ::= Sum[Group, Artifact, Version, Platform, Namespace, Def];
 Group     ::= Record[                   Name: String];
 Artifact  ::= Record[Parent: Group,     Name: String];
 Version   ::= Record[Parent: Artifact,  Name: String];
-Namespace ::= Record[Parent: Version,   Name: String];
+Platform  ::= Record[Parent: Version,   Name: String];
+Namespace ::= Record[Parent: Platform,  Name: String];
 Def       ::= Record[Parent: Namespace, Name: String];
 ```
+
+**CHANGELOG 0.7.X**: the `:parent` of a `Namespace` is now a
+  `Platform` not a `Version` as it was previously.
 
 The Grimoire API (`grimoire.api`
 [docs](http://conj.io/store/org.clojure-grimoire/lib-grimoire/latest/grimoire.api))
@@ -36,8 +42,9 @@ these multimethods are provided, however they are not loaded by
 default. API clients are responsible for loading what portions of the
 API they wish to use.
 
-The entire API is written in terms of `Either`, encoded using
-`grimoire.util/succeed`, `grimoire.util/fail`,
+The entire API is written in terms of `Maybe`
+[hackage](http://hackage.haskell.org/package/base-4.7.0.2/docs/Data-Maybe.html),
+encoded using `grimoire.util/succeed`, `grimoire.util/fail`,
 `grimoire.util/succeed?` and `grimoire.util/result`. Exceptions should
 be handled, please report encountered exceptions as bugs.
 
@@ -97,19 +104,17 @@ variable and can be pointed anywhere. Note that host string must
 include a protocol specifier, and must not end with `"/"`.
 
 Rate limiting may be applied to this API on the server side in future
-in the form of `Fail`ing requests.
+in the form of `fail`ing requests.
 
 ## Hacking
 
 Note that the tests assume an instance of Grimoire 0.4 or later
-running on 127.0.0.1:3000. Patches welcome, be warned that code is
-likely to move out of this repository into
-[var-link.clj](https://github.com/clojure-grimoire/var-link.clj) in
-future releases. PRs and issues welcome. No CA required.
+running on 127.0.0.1:3000. Patches, PRs and issues welcome. No CA
+required.
 
 ## License
 
-Copyright © 2014 Reid "arrdem" McKenzie
+Copyright © 2014-Present Reid "arrdem" McKenzie
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
