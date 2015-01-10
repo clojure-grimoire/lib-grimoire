@@ -29,24 +29,6 @@
      (str/replace #"_?LT_?" "<")
      (str/replace #"_?GT_?" ">")))
 
-(defn succeed [x]
-  [:succeed x])
-
-(defn succeed? [x]
-  {:pre [(vector? x)]}
-  (= :succeed (first x)))
-
-(defn result [x]
-  {:pre [(succeed? x)]}
-  (second x))
-
-(defn fail [x]
-  [:fail x])
-
-(defn fail? [x]
-  {:pre [(vector? x)]}
-  (= :fail (first x)))
-
 ;; FIXME: this should really be handled in data generation not in data use
 (defn normalize-version [x]
   (if-not (re-matches #"[0-9]+.[0-9]+.[0-9]+" x)

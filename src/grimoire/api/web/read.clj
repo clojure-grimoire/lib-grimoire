@@ -18,7 +18,8 @@
   protocol specifier as appropriate and should not end in a /."
   (:refer-clojure :exclude [isa?])
   (:require [grimoire.api :as api]
-            [grimoire.util :refer [normalize-version succeed? result succeed fail]]
+            [grimoire.util :refer [normalize-version]]
+            [grimoire.either :refer [with-result succeed? result succeed fail either?]]
             [grimoire.things :refer :all]
             [clojure.edn :as edn]
             [version-clj.core :as semver]))
@@ -40,6 +41,7 @@
        "?op=" op "&type=edn"))
 
 (defn do-data-req [config thing op]
+  {:post [either?]}
   (let [?res (-> (make-request config thing op)
                 slurp
                 edn/read-string)]

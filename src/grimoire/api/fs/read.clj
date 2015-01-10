@@ -3,7 +3,8 @@
   (:refer-clojure :exclude [isa?])
   (:require [grimoire.things :refer :all]
             [grimoire.api :as api]
-            [grimoire.util :refer [normalize-version succeed result fail succeed?]]
+            [grimoire.util :refer [normalize-version]]
+            [grimoire.either :refer [succeed result fail succeed?]]
             [grimoire.api.fs.impl :refer :all]
             [clojure.java.io :as io]
             [clojure.string :as string]

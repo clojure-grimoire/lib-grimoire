@@ -1,7 +1,7 @@
 (ns grimoire.api.web-test
   (:require [grimoire.api :as api]
             [grimoire.things :as t]
-            [grimoire.util :refer [succeed? result]]
+            [grimoire.either :refer [succeed? result]]
             [grimoire.api.web.read]
             [clojure.test :refer :all]))
 

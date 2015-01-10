@@ -1,7 +1,7 @@
 (ns grimoire.api.fs-test
   (:require [grimoire.api :as api]
             [grimoire.things :as t]
-            [grimoire.util :refer [result]]
+            [grimoire.either :refer [result]]
             [grimoire.api.fs.read]
             [grimoire.api.fs.write]
             [clojure.test :refer :all]))
