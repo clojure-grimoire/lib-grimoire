@@ -61,8 +61,8 @@
   [config thing op]
   {:post [either?]}
   (let [?res (-> (make-request config thing op)
-                slurp
-                edn/read-string)]
+                 slurp
+                 edn/read-string)]
     ((if (grim-succeed? ?res)
        succeed fail)
      (grim-result ?res))))
@@ -77,8 +77,8 @@
   (let [?res (do-data-req config parent op)]
     (if (succeed? ?res)
       (->> ?res result
-         (map (comp (partial ctor parent) :name))
-         succeed)
+           (map (comp (partial ctor parent) :name))
+           succeed)
       ?res)))
 
 ;; API imp'l
@@ -136,22 +136,22 @@
         currentv (thing->version thing)               ; version handle
         current  (normalize-version (:name currentv)) ; version string
         added    (-> (api/read-meta config thing)      ; FIXME: can Fail
-                    result                            ; FIXME: can throw AssertionException
-                    (get :added "0.0.0")
-                    normalize-version)                ; version string
+                     result                            ; FIXME: can throw AssertionException
+                     (get :added "0.0.0")
+                     normalize-version)                ; version string
         versions (->> (:parent currentv)
-                    (api/list-versions config))
+                      (api/list-versions config))
         unv-path (thing->relative-path :version thing)]
     (if (succeed? versions)
       (-> (for [v     (result versions)
-               :when (<= 0 (semver/version-compare (:name v) added))
-               :when (>= 0 (semver/version-compare (:name v) current))]
-           ;; FIXME: this could be a direct constructor given an
-           ;; appropriate vehicle for doing so since the type is directed
-           ;; and single but may not generally make sense if this is not
-           ;; the case.
-           (path->thing (str (thing->path v) "/" unv-path)))
-         succeed)
+                :when (<= 0 (semver/version-compare (:name v) added))
+                :when (>= 0 (semver/version-compare (:name v) current))]
+            ;; FIXME: this could be a direct constructor given an
+            ;; appropriate vehicle for doing so since the type is directed
+            ;; and single but may not generally make sense if this is not
+            ;; the case.
+            (path->thing (str (thing->path v) "/" unv-path)))
+          succeed)
 
       ;; versions is a Fail, pass it down
       versions)))
