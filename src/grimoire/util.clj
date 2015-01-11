@@ -35,3 +35,17 @@
     (str x ".0")
     x))
 
+(def -abbrevs
+  {"clojure"       "clj"
+   "clojurescript" "cljs"
+   "clojureclr"    "cljclr"
+
+   ;; In the hope that one day support will be in order
+   "oxlang"        "ox"
+   "pixie"         "pixi"
+   "toccata"       "toc"})
+
+(def normalize-platform
+  (comp #(get -abbrevs %1 %1)
+        #(.toLowerCase %)
+        name))

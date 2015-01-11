@@ -17,9 +17,9 @@
   (let [handle (io/file (-> config :datastore :docs))]
     (if (.isDirectory handle)
       (-> (for [d     (.listFiles handle)
-               :when (.isDirectory d)]
-           (->T :group nil (.getName d)))
-         succeed)
+                :when (.isDirectory d)]
+            (->Group (.getName d)))
+          succeed)
       (fail "Could not find store directory"))))
 
 (defmethod api/list-artifacts :filesystem [config thing]
@@ -30,10 +30,10 @@
     (if (.isDirectory handle)
       (-> (for [d     (.listFiles handle)
                :when (.isDirectory d)]
-           (->T :artifact thing (.getName d)))
-         succeed)
+            (->Artifact thing (.getName d)))
+          succeed)
       (fail (str "No such group "
-                 (:uri thing))))))
+                 (thing->path thing))))))
 
 (defmethod api/list-versions :filesystem [config thing]
   (let [thing    (ensure-thing thing)
@@ -42,27 +42,41 @@
         handle   (thing->handle config :else artifact)]
     (if (.isDirectory handle)
       (->> (for [d     (reverse (sort (.listFiles handle)))
-               :when (.isDirectory d)]
-           (->T :version artifact (.getName d)))
-         (sort-by :name)
-         reverse
-         succeed)
+                 :when (.isDirectory d)]
+             (->Version artifact (.getName d)))
+           (sort-by :name)
+           reverse
+           succeed)
       (fail (str "No such artifact "
-                 (:uri thing))))))
+                 (thing->path thing))))))
 
-(defmethod api/list-namespaces :filesystem [config thing]
+(defmethod api/list-platforms :filesystem [config thing]
   (let [thing   (ensure-thing thing)
         _       (assert thing)
         version (thing->version thing)
         _       (assert version)
         handle  (thing->handle config :else version)]
     (if (.isDirectory handle)
-      (-> (for [d     (.listFiles handle)
-               :when (.isDirectory d)]
-           (->T :namespace version (.getName d)))
-         succeed)
+      (-> (for [d     (sort-by #(.getName %) (.listFiles handle))
+                :when (.isDirectory d)]
+            (->Platform version (.getName d)))
+          succeed)
       (fail (str "No such version "
-                 (:uri thing))))))
+                 (thing->path thing))))))
+
+(defmethod api/list-namespaces :filesystem [config thing]
+  (let [thing    (ensure-thing thing)
+        _        (assert thing)
+        platform (thing->platform thing)
+        _        (assert platform)
+        handle   (thing->handle config :else platform)]
+    (if (.isDirectory handle)
+      (-> (for [d     (.listFiles handle)
+                :when (.isDirectory d)]
+            (->Ns platform (.getName d)))
+          succeed)
+      (fail (str "No such platform "
+                 (thing->path thing))))))
 
 (defmethod api/list-defs :filesystem [config thing]
   (let [thing     (ensure-thing thing)
@@ -72,35 +86,11 @@
         handle    (thing->handle config :else namespace)]
     (if (.isDirectory handle)
       (-> (for [d     (.listFiles handle)
-               :when (.isDirectory d)]
-           (->T :def namespace (.getName d)))
-         succeed)
+                :when (.isDirectory d)]
+            (->T :def namespace (.getName d)))
+          succeed)
       (fail (str "No such namespace "
-                 (:uri thing))))))
-
-(defmethod api/thing->prior-versions :filesystem [config thing]
-  (let [thing    (ensure-thing thing)
-        currentv (thing->version thing)               ; version handle
-        current  (normalize-version (:name currentv)) ; version string
-        added    (-> (api/read-meta config thing)
-                    (get :added "0.0.0")
-                    normalize-version)               ; version string
-        versions (->> (:parent currentv)
-                    (api/list-versions config))
-        unv-path (thing->relative-path :version thing)]
-    (if (succeed? versions)
-      (-> (for [v     (result versions)
-               :when (<= 0 (semver/version-compare (:name v) added))
-               :when (>= 0 (semver/version-compare (:name v) current))]
-           ;; FIXME: this could be a direct constructor given an
-           ;; appropriate vehicle for doing so since the type is directed
-           ;; and single but may not generally make sense if this is not
-           ;; the case.
-           (path->thing (str (thing->path v) "/" unv-path)))
-         succeed)
-
-      ;; versions is a Fail, pass it down
-      versions)))
+                 (thing->path thing))))))
 
 ;; Read things
 ;;--------------------
@@ -108,7 +98,7 @@
   (let [thing (ensure-thing thing)
         h     (thing->notes-handle config thing)]
     (if (and (.exists h)
-           (.isFile h))
+             (.isFile h))
       (succeed [[nil (slurp h)]])
       (fail "No such file"))))
 
@@ -117,32 +107,35 @@
         versions (api/thing->prior-versions config thing)]
     (if (succeed? versions)
       (-> (for [thing (result versions)
-               :let  [v (:name (thing->version thing))
-                      h (thing->notes-handle config thing)]
-               :when (.exists h)
-               :when (.isFile h)]
-           [v (slurp h)])
-         succeed)
+                :let  [v (:name (thing->version thing))
+                       h (thing->notes-handle config thing)]
+                :when (.exists h)
+                :when (.isFile h)]
+            [v (slurp h)])
+          succeed)
 
       ;; versions is a Fail, pass it down
       versions)))
 
 (defmethod api/read-notes :filesystem [config thing]
-  (if (#{:group :artifact} (:type thing))
-    (-read-group-notes config thing)
-    (-read-general-notes config thing)))
+  (case (:type thing)
+    (:group :artifact)
+    ,,(-read-group-notes config thing)
+
+    (:version :platform :namespace :def)
+    ,,(-read-general-notes config thing)))
 
 (defmethod api/read-examples :filesystem [config thing]
   (let [thing    (ensure-thing thing)
         versions (api/thing->prior-versions config thing)]
     (if (succeed? versions)
       (-> (for [thing (result versions)
-               :let  [v (:name (thing->version thing))
-                      h (thing->handle config :examples thing)]
-               ex    (.listFiles h)
-               :when (.isFile ex)]
-           [v (slurp ex)])
-         succeed)
+                :let  [v (:name (thing->version thing))
+                       h (thing->handle config :examples thing)]
+                ex    (.listFiles h)
+                :when (.isFile ex)]
+            [v (slurp ex)])
+          succeed)
 
       ;; versions is a Fail, pass it down
       versions)))
@@ -152,12 +145,12 @@
         handle (thing->meta-handle config thing)]
     (if (.exists handle) ;; guard against missing files
       (-> handle
-         slurp
-         (string/replace #"#<.*?>" "nil") ;; FIXME: Hack to ignore unreadable #<>s
-         edn/read-string
-         succeed)
+          slurp
+          (string/replace #"#<.*?>" "nil") ;; FIXME: Hack to ignore unreadable #<>s
+          edn/read-string
+          succeed)
       (fail (str "No meta for object "
-                 (:uri thing))))))
+                 (thing->path thing))))))
 
 (defmethod api/read-related :filesystem [config thing]
   ;; FIXME: This assumes the old Grimoire 0.3.X related file format,

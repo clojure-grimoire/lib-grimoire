@@ -21,13 +21,12 @@
             [grimoire.util :refer [normalize-version]]
             [grimoire.either :refer [with-result succeed? result succeed fail either?]]
             [grimoire.things :refer :all]
-            [clojure.edn :as edn]
-            [version-clj.core :as semver]))
+            [clojure.edn :as edn]))
 
 ;; Interacting with the datastore - reading
 ;;--------------------------------------------------------------------
 
-(def baseurl "/api/v0/")
+(def baseurl "/api/v1/")
 
 (defn grim-succeed?
   "λ [t] → Bool
@@ -49,7 +48,8 @@
   Forges a Grimoire API V0 request for a given Thing and Op."
   [config thing op]
   (str (-> config :datastore :host)
-       baseurl (:uri thing)
+       baseurl
+       (when thing (thing->path thing))
        "?op=" op "&type=edn"))
 
 (defn do-data-req
@@ -68,7 +68,7 @@
      (grim-result ?res))))
 
 (defn do-thing-req
-  "λ [Cfg → Op → (λ [p → String] → c) → p] → Either[Success[Seq[c]], Failure[String]]
+  "λ [Cfg → Op → (λ [p → String] → c) → p ⊆ Thing] → Either[Success[Seq[c]], Failure[String]]
 
   Helper, does a data request against the Grimoire web API as specified by the
   config and op, running the request results through the constructor to yield a
@@ -128,33 +128,6 @@
 
 (defmethod api/list-defs :web [config namespace-thing]
   (list-defs config namespace-thing))
-
-(defmethod api/thing->prior-versions :web [config thing]
-  ;; FIXME: this is entirely common to fs/read's thing->versions
-  {:pre [(#{:version :namespace :def} (:type thing))]}
-  (let [thing    (ensure-thing thing)
-        currentv (thing->version thing)               ; version handle
-        current  (normalize-version (:name currentv)) ; version string
-        added    (-> (api/read-meta config thing)      ; FIXME: can Fail
-                     result                            ; FIXME: can throw AssertionException
-                     (get :added "0.0.0")
-                     normalize-version)                ; version string
-        versions (->> (:parent currentv)
-                      (api/list-versions config))
-        unv-path (thing->relative-path :version thing)]
-    (if (succeed? versions)
-      (-> (for [v     (result versions)
-                :when (<= 0 (semver/version-compare (:name v) added))
-                :when (>= 0 (semver/version-compare (:name v) current))]
-            ;; FIXME: this could be a direct constructor given an
-            ;; appropriate vehicle for doing so since the type is directed
-            ;; and single but may not generally make sense if this is not
-            ;; the case.
-            (path->thing (str (thing->path v) "/" unv-path)))
-          succeed)
-
-      ;; versions is a Fail, pass it down
-      versions)))
 
 (defn read-notes
   "Implementation of grimoire.api/read-notes. This function should not be used

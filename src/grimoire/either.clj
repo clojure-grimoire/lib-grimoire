@@ -60,7 +60,7 @@
   {:pre [(fail? x)]}
   (second x))
 
-(defn maybe?
+(defn either?
   "λ [t] → Bool
 
   Type predicate, matching either succeed or failure structures. Intended as a
@@ -110,4 +110,4 @@
    `(let [~binding ~form]
       (try (if (succeed? ~binding)
              ~left ~right)
-           (catch Exception e# (fail e#)))))
+           (catch Exception e# (fail e#))))))

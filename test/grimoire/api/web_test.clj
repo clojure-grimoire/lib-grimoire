@@ -29,34 +29,45 @@
       (is (t/isa? :artifact ?a)))))
 
 (deftest list-versions-test
-  (let [g    (t/->Group "org.clojure")
-        a    (t/->Artifact g "clojure")
+  (let [a    (-> (t/->Group "org.clojure")
+                 (t/->Artifact "clojure"))
         ?res (-> test-config
-                (api/list-versions a))]
+                 (api/list-versions a))]
     (is (succeed? ?res))
     (doseq [?v (result ?res)]
       (is (t/isa? :version ?v)))))
 
 (deftest list-ns-test
-  (let [v    (t/->Version "org.clojure" "clojure" "1.6.0")
+  (let [v    (->  (t/->Group "org.clojure")
+                  (t/->Artifact "clojure")
+                  (t/->Version "1.6.0")
+                  (t/->Platform "clj"))
         ?res (-> test-config
-                (api/list-namespaces v))]
+                 (api/list-namespaces v))]
     (is (succeed? ?res))
     (doseq [?ns (result ?res)]
       (is (t/isa? :namespace ?ns)))))
 
 (deftest list-prior-versions-test
-  (let [ns   (t/->Ns "org.clojure" "clojure" "1.6.0" "clojure.core")
+  (let [ns   (-> (t/->Group "org.clojure")
+                 (t/->Artifact "clojure")
+                 (t/->Version "1.6.0")
+                 (t/->Platform "clj")
+                 (t/->Ns "clojure.core"))
         ?res (-> test-config
-                (api/thing->prior-versions ns))]
+                 (api/thing->prior-versions ns))]
     (is (succeed? ?res))
     (is (= #{"1.6.0" "1.5.0" "1.4.0"}
-           (->> ?res result (map (comp :name :parent)) set)))))
+           (->> ?res result (map (comp :name t/thing->version)) set)))))
 
 (deftest list-def-test
-  (let [ns   (t/->Ns "org.clojure" "clojure" "1.6.0" "clojure.core")
+  (let [ns   (-> (t/->Group "org.clojure")
+                 (t/->Artifact "clojure")
+                 (t/->Version "1.6.0")
+                 (t/->Platform "clj")
+                 (t/->Ns "clojure.core"))
         ?res (-> test-config
-                (api/list-defs ns))]
+                 (api/list-defs ns))]
     (is (succeed? ?res))
     (let [defs (->> ?res result (map :name) set)]
       (doseq [d ["for" "def" "let" "catch"]]
