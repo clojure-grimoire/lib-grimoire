@@ -42,11 +42,12 @@
   [x]
   [:fail x])
 
-(defn fail? [x]
+(defn fail?
   "λ [t] → Bool
 
   Type predicate. Matches only two-vectors [:fail x] as documented in
   the fail constructor."
+  [x]
   {:pre [(vector? x)
          (= 2 (count vector))]}
   (= :fail (first x)))
