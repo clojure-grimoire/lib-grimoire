@@ -8,7 +8,11 @@
   API Contract assumptions:
   
   - Everything has metadata, even if it's nil. If metadata for a Thing
-    cannot be found, then the Thing itself is not in the datastore.")
+    cannot be found, then the Thing itself is not in the datastore."
+  (:require [version-clj.core :as semver]
+            [grimoire.things :as t]
+            [grimoire.util :as util]
+            [grimoire.either :as e]))
 
 (defn dispatch [config & more]
   (-> config :datastore :mode))
@@ -42,20 +46,33 @@
   {:arglists '[[config artifact-thing]]}
   dispatch)
 
-(defmulti list-namespaces
-  "Succeeds with a result Seq[Namespace] representing all Clojure namespaces in
-  the specified Version. Could succeed with an empty result. Fails if the
+(defmulti list-platforms
+  "Succeeds with a result Seq[Platform] representing all Clojure dialects of the
+  specified Artifact in the specified datastore. Could succeed with an empty
+  result if there is no documentation for any known dialect. Fails if the
   specified Version does not exist or if another Failure is encountered."
 
   {:arglists '[[config version-thing]]}
   dispatch)
 
+(defmulti list-namespaces
+  "Succeeds with a result Seq[Namespace] representing all Clojure namespaces in
+  the specified Version. Could succeed with an empty result. Fails if the
+  specified Platform does not exist or if another Failure is encountered."
+
+  {:arglists '[[config platform-thing]]}
+  dispatch)
+
 (defmulti list-classes
   "Succeeds with a result Seq[Class] representing all Java classes in the
   specified Version. Could succeed with an empty result. Fails if the specified
-  Version does not exist or of another failure is encountered."
+  Version does not exist or of another failure is encountered.
+
+  Deprecated as of 0.7.0
+  Will be removed in 0.8.0"
   
-  {:arglists '[[config version-thing]]}
+  {:arglists   '[[config version-thing]]
+   :deprecated "0.7.0"}
   dispatch)
 
 (defmulti list-defs
@@ -84,7 +101,7 @@
   {:arglists '[[config thing]]}
   dispatch)
 
-;; FIXME: Examples on Namespaces? Artifacts?
+;; FIXME: Examples on Namespaces? Versions?
 (defmulti read-examples
   "Succeeds with a result Seq[Tuple[version, example-text]] for all examples on
   prior or equal versions of the given thing sorted in decending version
@@ -92,7 +109,7 @@
   encountered.
 
   Note that future versions of this API may extend examples to Namespaces and
-  Artifacts."
+  Versions."
 
   {:arglists '[[config def-thing]]}
   dispatch)
@@ -168,3 +185,28 @@
   
   {:arglists '[[config thing related-things]]}
   dispatch)
+
+;; Default implementations for operations for which such a thing is sane
+;;--------------------------------------------------------------------
+
+(defmethod thing->prior-versions :default [config thing]
+  ;; FIXME: this is entirely common to fs/read's thing->versions
+  {:pre [(#{:version :platform :namespace :def} (:type thing))]}
+  (let [thing    (t/ensure-thing thing)
+        currentv (t/thing->version thing)               ; version handle
+        current  (-> currentv :name util/normalize-version)
+        added    (-> (read-meta config thing)
+                     e/result
+                     (get :added "0.0.0")
+                     util/normalize-version)
+        unv-path (t/thing->relative-path :version thing)
+        versions (e/result (list-versions config (:parent currentv)))]
+    (-> (for [v     versions
+              :when (<= 0 (semver/version-compare (:name v) added))
+              :when (>= 0 (semver/version-compare (:name v) current))]
+          ;; FIXME: this could be a direct constructor given an
+          ;; appropriate vehicle for doing so since the type is directed
+          ;; and single but may not generally make sense if this is not
+          ;; the case.
+          (t/path->thing (str (t/thing->path v) "/" unv-path)))
+        e/succeed)))

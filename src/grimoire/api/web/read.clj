@@ -18,97 +18,153 @@
   protocol specifier as appropriate and should not end in a /."
   (:refer-clojure :exclude [isa?])
   (:require [grimoire.api :as api]
-            [grimoire.util :refer [normalize-version succeed? result succeed fail]]
+            [grimoire.util :refer [normalize-version]]
+            [grimoire.either :refer [with-result succeed? result succeed fail either?]]
             [grimoire.things :refer :all]
-            [clojure.edn :as edn]
-            [version-clj.core :as semver]))
+            [clojure.edn :as edn]))
 
 ;; Interacting with the datastore - reading
 ;;--------------------------------------------------------------------
 
-(def baseurl "/api/v0/")
+(def baseurl "/api/v1/")
 
-(defn grim-succeed? [result]
+(defn grim-succeed?
+  "λ [t] → Bool
+
+  Helper, indicates whether a Grimoire web result succeeded or failed."
+  [result]
   (= (:result result) :success))
 
-(defn grim-result [result]
+(defn grim-result
+  "λ [t] → y
+
+  Helper, destructures out the body of a Grimoire web result."
+  [result]
   (:body result))
 
-(defn make-request [config thing op]
+(defn make-request
+  "λ [Cfg → Thing → Op] → String
+
+  Forges a Grimoire API V0 request for a given Thing and Op."
+  [config thing op]
   (str (-> config :datastore :host)
-       baseurl (:uri thing)
+       baseurl
+       (when thing (thing->path thing))
        "?op=" op "&type=edn"))
 
-(defn do-data-req [config thing op]
+(defn do-data-req
+  "λ [Cfg → Thing → Op] → Either[Success[t], Failure[String]]
+
+  Forges and executes a data request agains the Grimoire web API as specified by
+  the various arguments. Returns the entire result of the Grimoire request
+  unaltered and wrapped in Either."
+  [config thing op]
+  {:post [either?]}
   (let [?res (-> (make-request config thing op)
-                slurp
-                edn/read-string)]
+                 slurp
+                 edn/read-string)]
     ((if (grim-succeed? ?res)
        succeed fail)
      (grim-result ?res))))
 
-(defn do-thing-req [config op ctor parent]
+(defn do-thing-req
+  "λ [Cfg → Op → (λ [p → String] → c) → p ⊆ Thing] → Either[Success[Seq[c]], Failure[String]]
+
+  Helper, does a data request against the Grimoire web API as specified by the
+  config and op, running the request results through the constructor to yield a
+  seq of Things as constructed from the pair (parent, (:name result))."
+  [config op ctor parent]
   (let [?res (do-data-req config parent op)]
     (if (succeed? ?res)
       (->> ?res result
-         (map (comp (partial ctor parent) :name))
-         succeed)
+           (map (comp (partial ctor parent) :name))
+           succeed)
       ?res)))
 
-(defmethod api/list-groups :web [config]
+;; API imp'l
+;;--------------------------------------------------------------------
+
+(defn list-groups
+  "Implementation of grimoire.api/list-groups. This function should not be used
+  directly, please use the wrapper multimethod in grimoire.api."
+  [config]
   (do-thing-req config "groups" ->Group nil))
 
-(defmethod api/list-artifacts :web [config group-thing]
+(defmethod api/list-groups :web [config]
+  (list-groups config))
+
+(defn list-artifacts
+  "Implementation of grimoire.api/list-artifacts. This function should not be
+  used directly, please use the wrapper multimethod in grimoire.api."
+  [config group-thing]
   (do-thing-req config "artifacts" ->Artifact group-thing))
 
-(defmethod api/list-versions :web [config artifact-thing]
+(defmethod api/list-artifacts :web [config group-thing]
+  (list-artifacts config group-thing))
+
+(defn list-versions
+  "Implementation of grimoire.api/list-versions. This function should not be
+  used directly, please use the wrapper multimethod in grimoire.api."
+  [config artifact-thing]
   (do-thing-req config "versions" ->Version artifact-thing))
 
-(defmethod api/list-namespaces :web [config version-thing]
+(defmethod api/list-versions :web [config artifact-thing]
+  (list-versions config artifact-thing))
+
+(defn list-namespaces
+  "Implementation of grimoire.api/list-namespaces. This function should not be
+  used directly, please use the wrapper multimethod in grimoire.api."
+  [config version-thing]
   (do-thing-req config "namespaces" ->Ns version-thing))
 
-(defmethod api/list-defs :web [config namespace-thing]
+(defmethod api/list-namespaces :web [config version-thing]
+  (list-namespaces config version-thing))
+
+(defn list-defs
+  "Implementation of grimoire.api/list-defs. This function should not be
+  used directly, please use the wrapper multimethod in grimoire.api."
+  [config namespace-thing]
   (do-thing-req config "all" ->Def namespace-thing))
 
-(defmethod api/thing->prior-versions :web [config thing]
-  ;; FIXME: this is entirely common to fs/read's thing->versions
-  {:pre [(#{:version :namespace :def} (:type thing))]}
-  (let [thing    (ensure-thing thing)
-        currentv (thing->version thing)               ; version handle
-        current  (normalize-version (:name currentv)) ; version string
-        added    (-> (api/read-meta config thing)      ; FIXME: can Fail
-                    result                            ; FIXME: can throw AssertionException
-                    (get :added "0.0.0")
-                    normalize-version)                ; version string
-        versions (->> (:parent currentv)
-                    (api/list-versions config))
-        unv-path (thing->relative-path :version thing)]
-    (if (succeed? versions)
-      (-> (for [v     (result versions)
-               :when (<= 0 (semver/version-compare (:name v) added))
-               :when (>= 0 (semver/version-compare (:name v) current))]
-           ;; FIXME: this could be a direct constructor given an
-           ;; appropriate vehicle for doing so since the type is directed
-           ;; and single but may not generally make sense if this is not
-           ;; the case.
-           (path->thing (str (thing->path v) "/" unv-path)))
-         succeed)
+(defmethod api/list-defs :web [config namespace-thing]
+  (list-defs config namespace-thing))
 
-      ;; versions is a Fail, pass it down
-      versions)))
-
-(defmethod api/read-notes :web [config thing]
+(defn read-notes
+  "Implementation of grimoire.api/read-notes. This function should not be used
+  directly, please use the wrapper multimethod in grimoire.api."
+  [config thing]
   {:pre [(isa? :def thing)]}
   (do-data-req config thing "notes"))
 
-(defmethod api/read-examples :web [config def-thing]
+(defmethod api/read-notes :web [config thing]
+  (read-notes config thing))
+
+(defn read-examples
+  "Implementation of grimoire.api/read-examples. This function should
+  not be used directly, please use the wrapper multimethod in
+  grimoire.api."
+  [config def-thing]
   {:pre [(isa? :def def-thing)]}
   (do-data-req config def-thing "examples"))
 
-(defmethod api/read-meta :web [config thing]
+(defmethod api/read-examples :web [config def-thing]
+  (read-examples config def-thing))
+
+(defn read-meta
+  "Implementation of grimoire.api/read-meta. This function should not
+  be used directly, please use the wrapper multimethod in
+  grimoire.api."
+  [config thing]
   (do-data-req config thing "meta"))
 
-(defmethod api/read-related :web [config def-thing]
+(defmethod api/read-meta :web [config thing]
+  (read-meta config thing))
+
+(defn read-related
+  "Implementation of grimoire.api/read-related. This function should not
+  be used directly, please use the wrapper multimethod in
+  grimoire.api."
+  [config def-thing]
   {:pre [(isa? :def def-thing)]}
   ;; FIXME: not implemented on the Grimoire side see clojure-grimoire/grimoire#152
   ;; Grimoire will yeild Succeed[Seq[qualifiedSymbol]]
@@ -116,6 +172,9 @@
         ?res    (do-data-req config def-thing "related")]
     (if (succeed? ?res)
       (->> ?res result
-         (map (comp path->thing :uri))
-         succeed)
+           (map (comp path->thing :uri))
+           succeed)
       ?res)))
+
+(defmethod api/read-related :web [config def-thing]
+  (read-related config def-thing))
