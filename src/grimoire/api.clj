@@ -178,7 +178,6 @@
 ;;--------------------------------------------------------------------
 
 (defmethod thing->prior-versions :default [config thing]
-  ;; FIXME: this is entirely common to fs/read's thing->versions
   {:pre [(#{:version :platform :namespace :def} (:type thing))]}
   (let [thing    (t/ensure-thing thing)
         currentv (t/thing->version thing)               ; version handle
