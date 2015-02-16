@@ -49,7 +49,7 @@
   the fail constructor."
   [x]
   {:pre [(vector? x)
-         (= 2 (count vector))]}
+         (= 2 (count x))]}
   (= :fail (first x)))
 
 (defn message
