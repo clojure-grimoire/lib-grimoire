@@ -7,7 +7,6 @@
 
 ;; Interacting with the datastore - writing
 ;;--------------------------------------------------------------------
-
 (defmethod api/write-meta :filesystem [config thing data]
   (let [thing  (t/ensure-thing thing)
         _      (assert thing)
