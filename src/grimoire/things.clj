@@ -48,6 +48,13 @@
       (namespace? t)
       (def? t)))
 
+(defn versioned? [t]
+  (or (version? t)
+      (artifact? t)
+      (platform? t)
+      (namespace? t)
+      (def? t)))
+
 (defn thing->parent [t]
   (when (thing? t)
     (:parent t)))
