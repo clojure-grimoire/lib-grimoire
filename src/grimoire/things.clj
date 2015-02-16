@@ -10,7 +10,7 @@
   Platform  ::= Record[Parent: Version,   Name: String];
   Namespace ::= Record[Parent: Platform,  Name: String];
   Def       ::= Record[Parent: Namespace, Name: String];"
-  (:refer-clojure :exclude [isa? def namespace])
+  (:refer-clojure :exclude [def namespace])
   (:require [clojure.string :as string]
             [grimoire.util :as u]
             [detritus.variants :as v]))
