@@ -161,24 +161,41 @@
 
 ;; Manipulating things and strings
 
-(defn path->thing [path]
+(defn path->thing
+  "String to Thing transformer which builds a Thing tree by splitting on /. The
+  resulting things are rooted on a Group as required by the definition of a
+  Thing."
+  [path]
   (->> (string/split path #"/")
        (map vector [->Group ->Artifact ->Version ->Platform ->Ns ->Def])
        (reduce (fn [acc [f v]]
                  (if v (f acc v) acc))
                nil)))
 
-(defn thing->relative-path [t thing]
+(defn thing->relative-path
+  "Function from a Thing type and a Thing instance which walks the instance's
+  parent tree until it reaches an instance of the given Thing type. Returns a
+  string representing the relative path of the given Thing instance with respect
+  to the parent Thing type."
+  [t thing]
+  {:pre [(thing? thing)
+         (v/TagDescriptor? t)]}
   (->> thing
        (iterate thing->parent)
        (take-while identity)
-       (take-while #(not= (v/tag %1) t))
+       (take-while #(not= (v/tag %1) (:tag t)))
        (reverse)
        (map thing->name)
        (interpose "/")
        (apply str)))
 
-(defn thing->root-to [t thing]
+(defn thing->root-to
+  "Complement of thing->relative-path. Given a Thing instance and a Thing type,
+  returns the subpath of the given Thing instance from the root (Group) to the
+  given Thing type."
+  [t thing]
+  {:pre [(thing? thing)
+         (v/TagDescriptor? t)]}
   (->> thing
        (iterate thing->parent)
        (take-while identity)
@@ -188,17 +205,23 @@
        (interpose "/")
        (apply str)))
 
-(defn ensure-thing [maybe-thing]
+(defn ensure-thing
+  "Transformer which, if given a string, will construct a Thing (with a warning)
+  and if given a Thing will return the Thing without modification. Intended as a
+  guard for potentially mixed input situations."
+  [maybe-thing]
   (cond (string? maybe-thing)
-        ,,(path->thing maybe-thing)
+        ,,(do (.write *err* "Warning: building a thing from a string via ensure-string!\n")
+              (path->thing maybe-thing))
 
         (thing? maybe-thing)
         ,,maybe-thing
 
         :else
-        ,,(throw (Exception.
-                  (str "Unsupported ensure-thing value "
-                       (pr-str maybe-thing))))))
+        ,,(throw
+           (Exception.
+            (str "Unsupported ensure-thing value "
+                 (pr-str maybe-thing))))))
 
 ;; Traversing things
 
