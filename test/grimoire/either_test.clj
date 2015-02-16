@@ -8,4 +8,7 @@
     (is (either/succeed? (either/succeed r)))
 
     (is (= r (either/message (either/fail r))))
-    (is (either/fail? (either/fail r)))))
+    (is (either/fail? (either/fail r)))
+
+    (is (either/either? (either/succeed r)))
+    (is (either/either? (either/fail r)))))
