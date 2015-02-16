@@ -10,47 +10,108 @@
   Platform  ::= Record[Parent: Version,   Name: String];
   Namespace ::= Record[Parent: Platform,  Name: String];
   Def       ::= Record[Parent: Namespace, Name: String];"
-  (:refer-clojure :exclude [isa?])
+  (:refer-clojure :exclude [isa? def namespace])
   (:require [clojure.string :as string]
-            [grimoire.util :as u]))
+            [grimoire.util :as u]
+            [detritus.variants :as v]))
 
-(defn isa? [t o]
-  (= (:type o) t))
+(v/deftag group [name]
+  {:pre [(string? name)]})
 
-(defn ->T [t parent name]
-  {:type   t
-   :parent parent
-   :name   name
-   ::uri    (str (::uri parent)
-                 (when (::uri parent) "/")
-                 name)})
+(v/deftag artifact [parent, name]
+  {:pre [(group? parent)
+         (string? name)]})
+
+(v/deftag version [parent, name]
+  {:pre [(artifact? parent)
+         (string? name)]})
+
+(v/deftag platform [parent, name]
+  {:pre [(version? parent)
+         (string? name)]})
+
+(v/deftag namespace [parent, name]
+  {:pre [(platform? parent)
+         (string? name)]})
+
+(v/deftag def [parent, name]
+  {:pre [(namespace? parent)
+         (string? name)]})
 
 ;; Helpers for walking thing paths
 ;;--------------------------------------------------------------------
-(defn thing->group [thing]
-  (if-not (isa? :group thing)
-    (when thing (recur (:parent thing)))
-    thing))
+(defn thing? [t]
+  (or (group? t)
+      (artifact? t)
+      (version? t)
+      (platform? t)
+      (namespace? t)
+      (def? t)))
 
-(defn thing->artifact [thing]
-  (if-not (isa? :artifact thing)
-    (when thing (recur (:parent thing)))
-    thing))
+(defn thing->parent [t]
+  (when (thing? t)
+    (:parent t)))
 
-(defn thing->version [thing]
-  (if-not (isa? :version thing)
-    (when thing (recur (:parent thing)))
-    thing))
+(defn thing->name [t]
+  (when (thing? t)
+    (:name t)))
 
-(defn thing->platform [thing]
-  (if-not (isa? :platform thing)
-    (when thing (recur (:parent thing)))
-    thing))
+(defn thing->group [t]
+  {:pre [(thing? t)]}
+  (if-not (group? t)
+    (when t
+      (recur (thing->parent t)))
+    t))
 
-(defn thing->namespace [thing]
-  (if-not (isa? :namespace thing)
-    (when thing (recur (:parent thing)))
-    thing))
+(defn thing->artifact [t]
+  {:pre [(thing? t)
+         (or (artifact? t)
+             (version? t)
+             (platform? t)
+             (namespace? t)
+             (def? t))]}
+  (if-not (artifact? t)
+    (when t
+      (recur (thing->parent t)))
+    t))
+
+(defn thing->version [t]
+  {:pre [(thing? t)
+         (or (version? t)
+             (platform? t)
+             (namespace? t)
+             (def? t))]}
+  (if-not (version? t)
+    (when t
+      (recur (thing->parent t)))
+    t))
+
+(defn thing->platform [t]
+  {:pre [(thing? t)
+         (or (platform? t)
+             (namespace? t)
+             (def? t))]}
+  (if-not (platform? t)
+    (when t
+      (recur (thing->parent t)))
+    t))
+
+(defn thing->namespace [t]
+  {:pre [(thing? t)
+         (or (namespace? t)
+             (def? t))]}
+  (if-not (namespace? t)
+    (when t
+      (recur (thing->parent t)))
+    t))
+
+(defn thing->def [t]
+  {:pre [(thing? t)
+         (def? t)]}
+  (if-not (def? t)
+    (when t
+      (recur (thing->parent t)))
+    t))
 
 ;; Helpers for stringifying and reading paths
 ;;--------------------------------------------------------------------
@@ -59,10 +120,10 @@
   cannonical \"path\" which can be serialized, deserialized and walked back into
   a Handle."
 
-  [thing]
-  {:pre [(map? thing)]}
-  (or (::uri thing)
-      (->> thing
+  [t]
+  {:pre [(thing? t)]}
+  (or (::url t)
+      (->> t
            (iterate :parent)
            (take-while identity)
            (reverse)
@@ -73,51 +134,42 @@
 (defn ->Group
   ([groupid]
    {:pre [(string? groupid)]}
-   (->T :group nil groupid))
+   (let [v (->group groupid)]
+     (assoc v ::url (thing->path v))))
 
   ([_ groupid]
    (->Group groupid)))
 
 (defn ->Artifact
   [group artifact]
-  {:pre [(and (map? group)
-              (= :group (:type group)))
-         (string? artifact)]}
-  (->T :artifact group artifact))
+  (let [v (->artifact group artifact)]
+    (assoc v ::url (thing->path v))))
 
 (defn ->Version
   [artifact version]
-  {:pre [(and (map? artifact)
-              (= :artifact (:type artifact)))
-         (string? version)]}
-  (->T :version artifact version))
+  (let [v (->version artifact version)]
+    (assoc v ::url (thing->path v))))
 
 (defn ->Platform
   [version platform]
-  {:pre [(and (map? version)
-              (= :version (:type version)))
-         (string? platform)]}
-  (->T :platform version (u/normalize-platform platform)))
+  (let [v (->platform version (u/normalize-platform platform))]
+    (assoc v ::url (thing->path v))))
 
 (defn ->Ns
   [platform namespace]
-  {:pre [(and (map? platform)
-              (= :platform (:type platform)))
-         (string? namespace)]}
-  (->T :namespace platform namespace))
+  (let [v (->namespace platform namespace)]
+    (assoc v ::url (thing->path v))))
 
 (defn ->Def
   [namespace name]
-  {:pre [(and (map? namespace)
-              (= :namespace (:type namespace)))
-         (string? name)]}
-  (->T :def namespace name))
+  (let [v (->def namespace name)]
+    (assoc v ::url (thing->path v))))
 
 (defn path->thing [path]
   (->> (string/split path #"/")
-       (map vector [:group :artifact :version :platform :namespace :def])
-       (reduce (fn [acc [t v]]
-                 (if v (->T t acc v) acc))
+       (map vector [->Group ->Artifact ->Version ->Platform ->Ns ->Def])
+       (reduce (fn [acc [f v]]
+                 (if v (f acc v) acc))
                nil)))
 
 ;; Manipulating things
@@ -145,7 +197,7 @@
   (cond (string? maybe-thing)
         ,,(path->thing maybe-thing)
 
-        (map? maybe-thing)
+        (thing? maybe-thing)
         ,,maybe-thing
 
         :else

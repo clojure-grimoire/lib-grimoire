@@ -87,7 +87,7 @@
     (if (.isDirectory handle)
       (-> (for [d     (.listFiles handle)
                 :when (.isDirectory d)]
-            (->T :def namespace (.getName d)))
+            (->Def namespace (.getName d)))
           succeed)
       (fail (str "No such namespace "
                  (thing->path thing))))))
