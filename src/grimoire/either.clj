@@ -1,27 +1,17 @@
 (ns grimoire.either
   "Quick and dirty implementation of something like Haskell's Either[Success,
   Failure] for Clojure. Not the nicest thing in the world, but it'll do the
-  job. Used to indicate success and failure throughout the lib-grimoire API.")
+  job. Used to indicate success and failure throughout the lib-grimoire API."
+  (:require [detritus.variants :as v]))
 
-(defn succeed
+(v/deftag succeed
   "λ [t] → Succeed[t]
 
   Type constructor. Returns a pair [:succeed x] for all x.
 
   ∀x (succeed? (succeed x)) == true
   ∀x (result (succeed x)) == x"
-  [x]
-  [:succeed x])
-
-(defn succeed?
-  "λ [t] → Bool
-
-  Type predicate. Matches only two-vectors [:succeed x] as documented in the
-  succeed constructor."
-  [x]
-  {:pre [(vector? x)
-         (= 2 (count x))]}
-  (= :succeed (first x)))
+  [result])
 
 (defn result
   "λ [Succeed[t]] → t
@@ -30,27 +20,16 @@
   succeed. Otherwise encounters an assertion failure (type error)."
   [x]
   {:pre [(succeed? x)]}
-  (second x))
+  (:result x))
 
-(defn fail
+(v/deftag fail
   "λ [t] → Fail[x]
 
   Type constructor. Returns a pair [:fail x] for all x.
 
   ∀x (fail? (fail x)) == true
   ∀x (message (fail x)) == x"
-  [x]
-  [:fail x])
-
-(defn fail?
-  "λ [t] → Bool
-
-  Type predicate. Matches only two-vectors [:fail x] as documented in
-  the fail constructor."
-  [x]
-  {:pre [(vector? x)
-         (= 2 (count x))]}
-  (= :fail (first x)))
+  [message])
 
 (defn message
   "λ [Fail[t]] → t
@@ -59,7 +38,7 @@
   failure. Otherwise encounters an assertion failure (type error)."
   [x]
   {:pre [(fail? x)]}
-  (second x))
+  (:message x))
 
 (defn either?
   "λ [t] → Bool
