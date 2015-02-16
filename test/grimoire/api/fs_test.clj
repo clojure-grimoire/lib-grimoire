@@ -48,7 +48,7 @@
                    api/list-groups
                    result)]
     (is (= ["org.bar" "org.foo"]
-           (sort (map :name groups))))))
+           (sort (map t/thing->name groups))))))
 
 (deftest list-artifacts-test
   (let [g       (t/->Group "org.foo")
@@ -56,7 +56,7 @@
                     (api/list-artifacts g)
                     result)]
     (is (= ["a" "b"]
-           (sort (mapv :name members))))))
+           (sort (mapv t/thing->name members))))))
 
 (deftest list-versions-test
   (let [a        (-> (t/->Group "org.foo")
@@ -65,7 +65,7 @@
                      (api/list-versions a)
                      result)]
     (is (= ["0.1.0" "0.1.0-SNAPSHOT" "1.0.0" "1.0.1" "1.1.0"]
-           (sort (mapv :name versions))))))
+           (sort (mapv t/thing->name versions))))))
 
 (deftest list-platform-test
   (let [p (-> (t/->Group "org.foo")
@@ -75,7 +75,7 @@
                       (api/list-platforms p)
                       result)]
     (is (= ["clj" "cljclr" "cljs"]
-           (sort (map :name platforms))))))
+           (sort (map t/thing->name platforms))))))
 
 (deftest list-ns-test
   (let [v   (-> (t/->Group "org.foo")
@@ -86,7 +86,7 @@
                 (api/list-namespaces v)
                 result)]
     (is (= ["a.core" "a.impl.clj"]
-           (sort (mapv :name nss))))))
+           (sort (mapv t/thing->name nss))))))
 
 (deftest list-prior-versions-test
   (let [ns   (-> (t/->Group "org.foo")
@@ -114,7 +114,7 @@
                  (api/list-defs ns)
                  result)]
     (is (= ["foo" "qux"]
-           (sort (map :name defs))))))
+           (sort (map t/thing->name defs))))))
 
 ;; Reading/Writing tests
 ;;------------------------------------------------------------------------------
