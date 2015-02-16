@@ -131,10 +131,10 @@
   {:pre [(thing? t)]}
   (or (::url t)
       (->> t
-           (iterate :parent)
+           (iterate thing->parent)
            (take-while identity)
            (reverse)
-           (map :name)
+           (map thing->name)
            (interpose "/")
            (apply str))))
 
@@ -183,20 +183,21 @@
 ;;--------------------------------------------------------------------
 (defn thing->relative-path [t thing]
   (->> thing
-       (iterate :parent)
-       (take-while #(not= (:type %1) t))
+       (iterate thing->parent)
+       (take-while identity)
+       (take-while #(not= (v/tag %1) t))
        (reverse)
-       (map :name)
+       (map thing->name)
        (interpose "/")
        (apply str)))
 
 (defn thing->root-to [t thing]
   (->> thing
-       (iterate :parent)
+       (iterate thing->parent)
        (take-while identity)
        (reverse)
-       (take-while #(not= (:type %1) t))
-       (map :name)
+       (take-while #(not= (v/tag %1) t))
+       (map thing->name)
        (interpose "/")
        (apply str)))
 
