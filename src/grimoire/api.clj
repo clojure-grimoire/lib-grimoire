@@ -9,10 +9,11 @@
   
   - Everything has metadata, even if it's nil. If metadata for a Thing
     cannot be found, then the Thing itself is not in the datastore."
-  (:require [version-clj.core :as semver]
-            [grimoire.things :as t]
+  (:require [grimoire.things :as t]
             [grimoire.util :as util]
-            [grimoire.either :as e]))
+            [grimoire.either :as e]
+            [detritus.variants :as v]
+            [version-clj.core :as semver]))
 
 (defn dispatch [config & more]
   (-> config :datastore :mode))
@@ -178,7 +179,7 @@
 ;;--------------------------------------------------------------------
 
 (defmethod thing->prior-versions :default [config thing]
-  {:pre [(#{:version :platform :namespace :def} (:type thing))]}
+  {:pre [(t/versioned? thing)]}
   (let [thing    (t/ensure-thing thing)
         currentv (t/thing->version thing)               ; version handle
         current  (-> currentv :name util/normalize-version)
@@ -186,7 +187,7 @@
                      e/result
                      (get :added "0.0.0")
                      util/normalize-version)
-        unv-path (t/thing->relative-path :version thing)
+        unv-path (t/thing->relative-path ::t/version thing)
         versions (e/result (list-versions config (:parent currentv)))]
     (-> (for [v     versions
               :when (<= 0 (semver/version-compare (:name v) added))

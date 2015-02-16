@@ -16,11 +16,10 @@
   Note that the host need not be conj.io, but must host a Grimoire 0.4 or later
   instance providing the v0 API. The host string should include a http or https
   protocol specifier as appropriate and should not end in a /."
-  (:refer-clojure :exclude [isa?])
   (:require [grimoire.api :as api]
-            [grimoire.util :refer [normalize-version]]
+            [grimoire.util :as u]
             [grimoire.either :refer [with-result succeed? result succeed fail either?]]
-            [grimoire.things :refer :all]
+            [grimoire.things :as t]
             [clojure.edn :as edn]))
 
 ;; Interacting with the datastore - reading
@@ -49,7 +48,7 @@
   [config thing op]
   (str (-> config :datastore :host)
        baseurl
-       (when thing (thing->path thing))
+       (when thing (t/thing->path thing))
        "?op=" op "&type=edn"))
 
 (defn do-data-req
@@ -88,7 +87,7 @@
   "Implementation of grimoire.api/list-groups. This function should not be used
   directly, please use the wrapper multimethod in grimoire.api."
   [config]
-  (do-thing-req config "groups" ->Group nil))
+  (do-thing-req config "groups" t/->Group nil))
 
 (defmethod api/list-groups :web [config]
   (list-groups config))
@@ -97,7 +96,7 @@
   "Implementation of grimoire.api/list-artifacts. This function should not be
   used directly, please use the wrapper multimethod in grimoire.api."
   [config group-thing]
-  (do-thing-req config "artifacts" ->Artifact group-thing))
+  (do-thing-req config "artifacts" t/->Artifact group-thing))
 
 (defmethod api/list-artifacts :web [config group-thing]
   (list-artifacts config group-thing))
@@ -106,7 +105,7 @@
   "Implementation of grimoire.api/list-versions. This function should not be
   used directly, please use the wrapper multimethod in grimoire.api."
   [config artifact-thing]
-  (do-thing-req config "versions" ->Version artifact-thing))
+  (do-thing-req config "versions" t/->Version artifact-thing))
 
 (defmethod api/list-versions :web [config artifact-thing]
   (list-versions config artifact-thing))
@@ -115,7 +114,7 @@
   "Implementation of grimoire.api/list-namespaces. This function should not be
   used directly, please use the wrapper multimethod in grimoire.api."
   [config version-thing]
-  (do-thing-req config "namespaces" ->Ns version-thing))
+  (do-thing-req config "namespaces" t/->Ns version-thing))
 
 (defmethod api/list-namespaces :web [config version-thing]
   (list-namespaces config version-thing))
@@ -124,7 +123,7 @@
   "Implementation of grimoire.api/list-defs. This function should not be
   used directly, please use the wrapper multimethod in grimoire.api."
   [config namespace-thing]
-  (do-thing-req config "all" ->Def namespace-thing))
+  (do-thing-req config "all" t/->Def namespace-thing))
 
 (defmethod api/list-defs :web [config namespace-thing]
   (list-defs config namespace-thing))
@@ -133,7 +132,7 @@
   "Implementation of grimoire.api/read-notes. This function should not be used
   directly, please use the wrapper multimethod in grimoire.api."
   [config thing]
-  {:pre [(isa? :def thing)]}
+  {:pre [(t/def? thing)]}
   (do-data-req config thing "notes"))
 
 (defmethod api/read-notes :web [config thing]
@@ -144,7 +143,7 @@
   not be used directly, please use the wrapper multimethod in
   grimoire.api."
   [config def-thing]
-  {:pre [(isa? :def def-thing)]}
+  {:pre [(t/def? def-thing)]}
   (do-data-req config def-thing "examples"))
 
 (defmethod api/read-examples :web [config def-thing]
@@ -165,14 +164,14 @@
   be used directly, please use the wrapper multimethod in
   grimoire.api."
   [config def-thing]
-  {:pre [(isa? :def def-thing)]}
+  {:pre [(t/def? def-thing)]}
   ;; FIXME: not implemented on the Grimoire side see clojure-grimoire/grimoire#152
   ;; Grimoire will yeild Succeed[Seq[qualifiedSymbol]]
-  (let [version (thing->version def-thing)
+  (let [version (t/thing->version def-thing)
         ?res    (do-data-req config def-thing "related")]
     (if (succeed? ?res)
       (->> ?res result
-           (map (comp path->thing :uri))
+           (map (comp t/path->thing :uri))
            succeed)
       ?res)))
 
