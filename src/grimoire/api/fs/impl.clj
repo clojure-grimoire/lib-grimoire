@@ -2,9 +2,9 @@
   "Filesystem datastore implementation details. This namespace is not part of
   the intentional API exposed in `grimoire.api` and should not be used by
   library client code."
-  (:refer-clojure :exclude [isa?])
   (:require [grimoire.util :as util]
-            [grimoire.things :refer :all]
+            [grimoire.things :as t]
+            [detritus.variants :as v]
             [clojure.java.io :as io]))
 
 ;; Private helpers for getting fs handles
@@ -21,17 +21,17 @@
   (let [which-store (if-not (= :notes which)
                       :docs :notes)
         d           (get store which (which-store store))
-        parent      (:parent thing)
-        p           (io/file (str d "/" (when parent (thing->path parent))))
+        parent      (t/thing->parent thing)
+        p           (io/file (str d "/" (when parent (t/thing->path parent))))
         e           (case which
                       (:meta)     "/meta.edn"
                       (:related)  "/related.txt"
                       (:examples) "/examples/"
                       (:notes)    "/notes.md"
                       nil)
-        n           (if (= :def (:type thing))
-                      (util/munge (:name thing))
-                      (:name thing))
+        n           (if (= ::t/def (v/tag thing))
+                      (util/munge (t/thing->name thing))
+                      (t/thing->name thing))
         h           (io/file p (str n e))]
     h))
 
@@ -61,13 +61,3 @@
   [c thing]
   (let [h (thing->handle c :related thing)]
     h))
-
-(defn update
-  "λ [{A → B} A (λ [B args*] → C) args*] → {A → C}
-
-  Updates a key in the map by applying f to the value at that key more
-  arguments, returning the resulting map."
-
-  [map key f & args]
-  (assoc map key
-         (apply f (get map key) args)))
