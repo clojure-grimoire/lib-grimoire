@@ -120,7 +120,6 @@
            (interpose "/")
            (apply str))))
 
-
 ;; smarter url caching constructors
 
 
@@ -157,7 +156,6 @@
   [namespace name]
   (let [v (->def namespace name)]
     (assoc v ::url (thing->path v))))
-
 
 ;; Manipulating things and strings
 
