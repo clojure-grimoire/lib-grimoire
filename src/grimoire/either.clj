@@ -101,14 +101,15 @@
   ([[binding form] left]
    `(let [res# ~form]
       (if (succeed? res#)
-        (let [~binding res#]
+        (let [~binding (result res#)]
           (try ~left
                (catch Exception e# (fail e#))))
         res#)))
 
   ([[binding form] left right]
    {:pre [(symbol? binding)]}
-   `(let [~binding ~form]
-      (try (if (succeed? ~binding)
-             ~left ~right)
+   `(let [x# ~form]
+      (try (if (succeed? x#)
+             (let [~binding (result x#)] ~left)
+             (let [~binding (message x#)] ~right))
            (catch Exception e# (fail e#))))))
