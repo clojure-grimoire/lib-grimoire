@@ -197,8 +197,8 @@
   (->> thing
        (iterate thing->parent)
        (take-while identity)
+       (drop-while #(not= (v/tag %1) (:tag t)))
        (reverse)
-       (take-while #(not= (v/tag %1) t))
        (map thing->name)
        (interpose "/")
        (apply str)))
