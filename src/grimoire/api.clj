@@ -187,7 +187,7 @@
                      e/result
                      (get :added "0.0.0")
                      util/normalize-version)
-        unv-path (t/thing->relative-path ::t/version thing)
+        unv-path (t/thing->relative-path t/version thing)
         versions (e/result (list-versions config (:parent currentv)))]
     (-> (for [v     versions
               :when (<= 0 (semver/version-compare (:name v) added))
