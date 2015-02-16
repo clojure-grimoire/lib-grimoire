@@ -67,9 +67,8 @@
   Type predicate, matching either succeed or failure structures. Intended as a
   postcondition for maybe functions."
   [x]
-  (and (vector? x)
-       (= 2 (count x))
-       (#{:succeed :fail} (first x))))
+  (or (succeed? x)
+      (fail? x)))
 
 (defmacro with-result
   "This macro is a helper designed to emulate the Haskell pattern matching which
