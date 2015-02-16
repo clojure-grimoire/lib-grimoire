@@ -20,8 +20,9 @@
   (is (t/version?   (t/thing->version t)))
   (is (t/platform?  (t/thing->platform t)))
   (is (t/namespace? (t/thing->namespace t)))
-  (is (t/def?       (t/thing->def t)))
+  (is (t/def?       (t/thing->def t))))
 
+(deftest thing->def-tests
   ;; Testing stuff that should fail
   (testing "Testing thing->def"
     (is-assert-error?
@@ -42,8 +43,9 @@
 
     (is-assert-error?
      (t/thing->def
-      (t/thing->group t))))
+      (t/thing->group t)))))
 
+(deftest thing->namespace-tests
   (testing "Testing thing->namespace"
     (is-assert-error?
      (t/thing->namespace
@@ -59,8 +61,9 @@
 
     (is-assert-error?
      (t/thing->namespace
-      (t/thing->group t))))
+      (t/thing->group t)))))
 
+(deftest thing->platform-tests
   (testing "Testing thing->platform"
     (is-assert-error?
      (t/thing->platform
@@ -72,8 +75,9 @@
 
     (is-assert-error?
      (t/thing->platform
-      (t/thing->group t))))
+      (t/thing->group t)))))
 
+(deftest thing->version-tests
   (testing "Testing thing->version"
     (is-assert-error?
      (t/thing->version
@@ -81,8 +85,9 @@
 
     (is-assert-error?
      (t/thing->version
-      (t/thing->group t))))
+      (t/thing->group t)))))
 
+(deftest thing->artifact-tests
   (testing "Testing thing->artifact"
     (is-assert-error?
      (t/thing->artifact
