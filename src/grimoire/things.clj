@@ -225,90 +225,71 @@
 
 
 (defn thing->group
-  "Function from a Thing to a Group. Traverses thing->parent until a Group is
-  produced. As every legal Thing must be rooted on a Group this function is
-  guranteed to return non-nil."
+  "Function from a Thing to a Group. If the Thing is rooted on a Group,
+  or is a Group, traverses thing->parent until a Group is produced. Otherwise
+  returns nil."
   [t]
   {:pre [(thing? t)]}
-  (if-not (group? t)
-    (when t
-      (recur (thing->parent t)))
-    t))
+  (when (grouped? t)
+    (if-not (group? t)
+      (when t
+        (recur (thing->parent t)))
+      t)))
 
 (defn thing->artifact
-  "Function from a Thing to an Artifact. Traverses thing->parent until the
-  rooting Artifact is reached and then returns that value.
-
-  Fails preconditions if the input is not a Thing, or is not a thing which is
-  rooted on an artifact or is itself an artifact."
+  "Function from a Thing to an Artifact. If the Thing is rooted on an Artifact,
+  or is an Artifact, traverses thing->parent until the rooting Artifact is
+  reached and then returns that value. Otherwise returns nil."
   [t]
-  {:pre [(thing? t)
-         (or (artifact? t)
-             (version? t)
-             (platform? t)
-             (namespace? t)
-             (def? t))]}
-  (if-not (artifact? t)
-    (when t
-      (recur (thing->parent t)))
-    t))
+  {:pre [(thing? t)]}
+  (when (artifacted? t)
+    (if-not (artifact? t)
+      (when t
+        (recur (thing->parent t)))
+      t)))
 
 (defn thing->version
-  "Function from a Thing to a Verison. Traverses thing->parent until the rooting
-  Version is reached and then returns that value.
-
-  Fails preconditions if the input is not a Thing, or is not a thing which is
-  rooted on a version or is itself a version."
+  "Function from a Thing to a Verison. If the Thing is rooted on a Version or is
+  a Version, traverses thing->parent until the rooting Version is reached and
+  then returns that value. Otherwise returns nil."
   [t]
-  {:pre [(thing? t)
-         (or (version? t)
-             (platform? t)
-             (namespace? t)
-             (def? t))]}
-  (if-not (version? t)
-    (when t
-      (recur (thing->parent t)))
-    t))
+  {:pre [(thing? t)]}
+  (when (versioned? t)
+    (if-not (version? t)
+      (when t
+        (recur (thing->parent t)))
+      t)))
 
 (defn thing->platform
-  "Function from a Thing to a Platform. Traverses thing->parent until the
-  rooting Platform is reached and then returns that value.
-
-  Fails preconditions if the input is not a Thing, or is neither a thing rooted
-  on a Platform nor itself a Platform."
+  "Function from a Thing to a Platform. If the Thing is rooted on a Platform or
+  is a Platform traverses thing->parent until the rooting Platform is reached
+  and then returns that value. Otherwise returns nil."
   [t]
-  {:pre [(thing? t)
-         (or (platform? t)
-             (namespace? t)
-             (def? t))]}
-  (if-not (platform? t)
-    (when t
-      (recur (thing->parent t)))
-    t))
+  {:pre [(thing? t)]}
+  (when (platformed? t)
+    (if-not (platform? t)
+      (when t
+        (recur (thing->parent t)))
+      t)))
 
 (defn thing->namespace
-  "Function from a Thing to a Namespace. Traverses thing->parent until the
-  rooting Platform is reached and then returns that value.
-
-  Fails preconditions if the input is not itself a Thing, is not itself a
-  Namespace or cannot be converted to a Namespace by traversal."
+  "Function from a Thing to a Namespace. If the Thing is rooted on a Platform or
+  is a Platform traverses thing->parent until the rooting Platform is reached
+  and then returns that value. Otherwise returns nil."
   [t]
-  {:pre [(thing? t)
-         (or (namespace? t)
-             (def? t))]}
-  (if-not (namespace? t)
-    (when t
-      (recur (thing->parent t)))
-    t))
+  {:pre [(thing? t)]}
+  (when (namespaced? t)
+    (if-not (namespace? t)
+      (when t
+        (recur (thing->parent t)))
+      t)))
 
 (defn thing->def
-  "Function from a Thing to a Def. Traverses thing->parent until the rooting Def
-  is reached and then returns that value.
-
-  Fails preconditions if the input is not itself a Thing, or is not a def."
+  "Function from a Thing to a Def. If the Thing either is a Def or is rooted on
+  a Def, traverses thing->parent until the rooting Def is reached and then
+  returns that value. Otherwise returns nil."
   [t]
-  {:pre [(thing? t)
-         (def? t)]}
+  {:pre [(thing? t)]}
   (if-not (def? t)
     (when t
       (recur (thing->parent t)))
