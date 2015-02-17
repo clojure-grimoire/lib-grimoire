@@ -65,16 +65,26 @@
 ;; Helpers for walking thing paths
 
 
-(defn thing?
-  "Predicate testing whether the input exists within the \"thing\" variant of
-  Σ[Group, Artifact,Version, Platform, Namespace, Def]"
+(defn namespaced?
+  "Predicate testing whether the input either is a namespace or has a namespace
+  as a parent."
   [t]
-  (or (group? t)
-      (artifact? t)
-      (version? t)
-      (platform? t)
-      (namespace? t)
+  (or (namespace? t)
       (def? t)))
+
+(defn platformed?
+  "Predicate testing whether the input either is a platform or has a platform as
+  a parent."
+  [t]
+  (or (namespaced? t)
+      (platform? t)))
+
+(defn artifacted?
+  "Predicate testing whether the input either is an artifact or has an artifact
+  as a parent."
+  [t]
+  (or (platformed? t)
+      (artifact? t)))
 
 (defn versioned?
   "Predicate testing whether the input exists within the subset of the \"thing\"
@@ -82,11 +92,28 @@
   Version instance and thus a version instance can be reached by upwards
   traversal."
   [t]
-  (or (version? t)
-      (artifact? t)
-      (platform? t)
-      (namespace? t)
-      (def? t)))
+  (or (platformed? t)
+      (version? t)))
+
+(defn artifacted?
+  "Predicate testing whether the input either is an artifact or has an artifact
+  as a parent."
+  [t]
+  (or (versioned? t)
+      (artifact? t)))
+
+(defn grouped?
+  "Predicate testing whether the input either is a group or has a group as a
+  parent."
+  [t]
+  (or (artifacted? t)
+      (group? t)))
+
+(defn thing?
+  "Predicate testing whether the input exists within the \"thing\" variant of
+  Σ[Group, Artifact,Version, Platform, Namespace, Def]"
+  [t]
+  (grouped? t))
 
 (defn thing->parent
   "Function from any object to Maybe[Thing]. If the input is a thing, returns
