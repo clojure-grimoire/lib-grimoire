@@ -13,6 +13,9 @@
 (defmacro is-assert-error? [x]
   `(is (~'thrown? AssertionError ~x)))
 
+(defmacro is-nil? [x]
+  `(is (~'nil? ~x)))
+
 (deftest thing-conversion-test
   ;; Testing stuff that should work
   (is (t/group?     (t/thing->group t)))
@@ -25,71 +28,71 @@
 (deftest thing->def-tests
   ;; Testing stuff that should fail
   (testing "Testing thing->def"
-    (is-assert-error?
+    (is-nil?
      (t/thing->def
       (t/thing->namespace t)))
 
-    (is-assert-error?
+    (is-nil?
      (t/thing->def
       (t/thing->platform t)))
 
-    (is-assert-error?
+    (is-nil?
      (t/thing->def
       (t/thing->version t)))
 
-    (is-assert-error?
+    (is-nil?
      (t/thing->def
       (t/thing->artifact t)))
 
-    (is-assert-error?
+    (is-nil?
      (t/thing->def
       (t/thing->group t)))))
 
 (deftest thing->namespace-tests
   (testing "Testing thing->namespace"
-    (is-assert-error?
+    (is-nil?
      (t/thing->namespace
       (t/thing->platform t)))
 
-    (is-assert-error?
+    (is-nil?
      (t/thing->namespace
       (t/thing->version t)))
 
-    (is-assert-error?
+    (is-nil?
      (t/thing->namespace
       (t/thing->artifact t)))
 
-    (is-assert-error?
+    (is-nil?
      (t/thing->namespace
       (t/thing->group t)))))
 
 (deftest thing->platform-tests
   (testing "Testing thing->platform"
-    (is-assert-error?
+    (is-nil?
      (t/thing->platform
       (t/thing->version t)))
 
-    (is-assert-error?
+    (is-nil?
      (t/thing->platform
       (t/thing->artifact t)))
 
-    (is-assert-error?
+    (is-nil?
      (t/thing->platform
       (t/thing->group t)))))
 
 (deftest thing->version-tests
   (testing "Testing thing->version"
-    (is-assert-error?
+    (is-nil?
      (t/thing->version
       (t/thing->artifact t)))
 
-    (is-assert-error?
+    (is-nil?
      (t/thing->version
       (t/thing->group t)))))
 
 (deftest thing->artifact-tests
   (testing "Testing thing->artifact"
-    (is-assert-error?
+    (is-nil?
      (t/thing->artifact
       (t/thing->group t)))))
 
