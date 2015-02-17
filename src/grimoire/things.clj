@@ -317,7 +317,4 @@
   returns that value. Otherwise returns nil."
   [t]
   {:pre [(thing? t)]}
-  (if-not (def? t)
-    (when t
-      (recur (thing->parent t)))
-    t))
+  (if (def? t) t nil))
