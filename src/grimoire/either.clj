@@ -3,15 +3,16 @@
   Failure] for Clojure. Not the nicest thing in the world, but it'll do the
   job. Used to indicate success and failure throughout the lib-grimoire API."
   (:require [detritus.variants :as v]))
-
-(v/deftag succeed
-  "λ [t] → Succeed[t]
-
-  Type constructor. Returns a pair [:succeed x] for all x.
+ 
+(v/deftag Succeess
+  "λ [t] → Success[t]
 
   ∀x (succeed? (succeed x)) == true
   ∀x (result (succeed x)) == x"
   [result])
+
+(def succeed  ->Succeess)
+(def succeed? Succeess?)
 
 (defn result
   "λ [Succeed[t]] → t
@@ -22,7 +23,7 @@
   {:pre [(succeed? x)]}
   (:result x))
 
-(v/deftag fail
+(v/deftag Failure
   "λ [t] → Fail[x]
 
   Type constructor. Returns a pair [:fail x] for all x.
@@ -31,8 +32,11 @@
   ∀x (message (fail x)) == x"
   [message])
 
+(def fail  ->Failure)
+(def fail? Failure?)
+
 (defn message
-  "λ [Fail[t]] → t
+  "λ [Failure[t]] → t
 
   Value extractor. For a failure value, unboxes the result of the
   failure. Otherwise encounters an assertion failure (type error)."
