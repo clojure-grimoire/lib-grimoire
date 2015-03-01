@@ -76,22 +76,62 @@
   "Succeeds with a result Seq[Thing] representing the argument Thing at earlier
   or equal versions sorted in decending order. Note that this op only supports
   Versions, Namespaces and Defs. Artifacts and Groups do not have versions, and
-  will give Failures. Will Fail if a nested Failure is encountered."
+  will give Failures.
+
+  Will Fail if a nested Failure is encountered."
 
   {:arglists '[[config thing]]}
   dispatch)
 
-(defmulti read-notes
-  "Succeeds with a result Seq[Tuple[Version, String]] being all notes on prior
-  or equal versions of the given thing sorted in decending version order. Will
-  Fail if the given Thing does not exist, or if a nested Failure is
+(defmulti list-notes
+  "Succeeds with a result Seq[Note] representing all the Notes known
+  on equal or prior versions of the given Thing.
+
+  Fails if the specified Thing does not exist, or if a nested Failure
+  is encountered."
+  {:arglists '[[config thing]]}
+  dispatch)
+
+(defmulti read-note
+  "Succeeds with a result String being the text of notes read as identified by a given notes handle.
+
+  Will Fail if the given Notes Thing does not exist, or if a nested Failure is
   encountered."
 
-  {:arglists '[[config thing]]}
+  {:arglists '[[config note-thing]]}
   dispatch)
 
-;; FIXME: Examples on Namespaces? Versions?
-(defmulti read-examples
+(defn read-notes
+  "Succeeds with a result Seq[Version, string], being the zip of list-notes with
+  read-note for each listed note.
+
+  Fails if a nested Failure is encountered."
+  [config thing]
+  (let [?notes (list-notes config thing)]
+    (if (e/succeed? ?notes)
+      (try
+        (e/succeed
+         (for [note (e/result ?notes)]
+           [(t/thing->version note)
+            (e/result (read-note config note))]))
+        (catch Exception e
+          (e/fail (.getMessage e))))
+      ?notes)))
+
+(defmulti list-examples
+  "Succeeds with a result Seq[Example] encoding for all examples on prior or
+  equal versions of the given thing sorted in decending version order.
+
+  Will Fail if the given Def does not exist, or if a nested Failure is
+  encountered.
+
+  Note that future versions of this API may extend examples to Namespaces and
+  Versions."
+
+  {:arglists '[[config def-thing]]}
+  dispatch)
+
+(defmulti read-example
   "Succeeds with a result Seq[Tuple[version, example-text]] for all examples on
   prior or equal versions of the given thing sorted in decending version
   order. Will Fail if the given Def does not exist, or if a nested Failure is
@@ -100,7 +140,7 @@
   Note that future versions of this API may extend examples to Namespaces and
   Versions."
 
-  {:arglists '[[config def-thing]]}
+  {:arglists '[[config example-thing]]}
   dispatch)
 
 (defmulti read-meta

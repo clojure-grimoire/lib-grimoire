@@ -93,54 +93,45 @@
       (fail (str "No such namespace "
                  (t/thing->path thing))))))
 
-;; Read things
-;;--------------------
-(defn -read-group-notes [config thing]
-  (let [thing (t/ensure-thing thing)
-        h     (impl/thing->notes-handle config thing)]
-    (if (and (.exists h)
-             (.isFile h))
-      (succeed [[nil (slurp h)]])
-      (fail "No such file"))))
-
-(defn -read-general-notes [config thing]
-  (let [thing    (t/ensure-thing thing)
-        versions (api/thing->prior-versions config thing)]
-    (if (succeed? versions)
-      (-> (for [thing (result versions)
-                :let  [v (t/thing->name (t/thing->version thing))
-                       h (impl/thing->notes-handle config thing)]
-                :when (.exists h)
-                :when (.isFile h)]
-            [v (slurp h)])
-          succeed)
-
-      ;; versions is a Fail, pass it down
-      versions)))
-
-(defmethod api/read-notes :filesystem [config thing]
+(defmethod api/list-notes :filesystem [config thing]
   {:pre [(t/thing? thing)]}
-  (case (v/tag thing)
-    (::t/group ::t/artifact)
-    ,,(-read-group-notes config thing)
+  (if-not (t/versioned? thing)
+    (let [versions (api/thing->prior-versions config thing)]
+      (if (succeed? versions)
+        (-> (for [thing (result versions)
+                  :let  [v (t/thing->name (t/thing->version thing))
+                         h (impl/thing->notes-handle config thing)]
+                  :when (.exists h)
+                  :when (.isFile h)]
+              (t/->Note thing, (.getCannonicalPath h)))
+            succeed)
 
-    (::t/version ::t/platform ::t/namespace ::t/def)
-    ,,(-read-general-notes config thing)))
+        ;; versions is a Fail, pass it down
+        versions))
 
-(defmethod api/read-examples :filesystem [config thing]
-  (let [thing    (t/ensure-thing thing)
-        versions (api/thing->prior-versions config thing)]
+    (let [h (impl/thing->notes-handle config thing)]
+      (succeed [(t/->Note thing, (.getCannonicalPath h))]))))
+
+(defmethod api/list-examples :filesystem [config thing]
+  {:pre [(t/thing? thing)]}
+  (let [versions (api/thing->prior-versions config thing)]
     (if (succeed? versions)
-      (-> (for [thing (result versions)
-                :let  [v (t/thing->name (t/thing->version thing))
-                       h (impl/thing->handle config :examples thing)]
+      (-> (for [prior-thing (result versions)
+                :let  [v (t/thing->name (t/thing->version prior-thing))
+                       h (impl/thing->handle config :examples prior-thing)]
                 ex    (.listFiles h)
                 :when (.isFile ex)]
-            [v (slurp ex)])
+            (t/->Example thing, (.getCannonicalPath ex)))
           succeed)
 
       ;; versions is a Fail, pass it down
       versions)))
+
+;; Read things
+;;--------------------
+
+;; FIXME: read-note
+;; FIXME: read-example
 
 (defmethod api/read-meta :filesystem [config thing]
   (let [thing  (t/ensure-thing thing)
