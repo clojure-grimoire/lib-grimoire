@@ -3,13 +3,17 @@
   uniquely naming and referencing entities in a Grimoire documentation
   store.
 
-  Thing     ::= Sum[Group, Artifact, Version, Platform, Namespace, Def];
+  Thing     ::= Sum[Group, Artifact, Version, Platform,
+                    Namespace, Def, Note, Example];
   Group     ::= Record[                   Name: String];
   Artifact  ::= Record[Parent: Group,     Name: String];
   Version   ::= Record[Parent: Artifact,  Name: String];
   Platform  ::= Record[Parent: Version,   Name: String];
   Namespace ::= Record[Parent: Platform,  Name: String];
-  Def       ::= Record[Parent: Namespace, Name: String];"
+  Def       ::= Record[Parent: Namespace, Name: String];
+
+  Note      ::= Record[Parent: Thing,     Handle: String];
+  Example   ::= Record[Parent: Thing,     Handle: String];"
   (:refer-clojure :exclude [def namespace])
   (:require [clojure.string :as string]
             [grimoire.util :as u]
@@ -62,29 +66,57 @@
   {:pre [(namespace? parent)
          (string? name)]})
 
+(declare thing?)
+
+(v/deftag note
+  "Represents a single block of notes on an arbitrary Thing as
+  identified by a Handle. The Handle is intended to be some structure
+  such as a file path, record ID, UUID or something else uniquely
+  naming a specific note."
+  [parent, handle]
+  {:pre [(thing? parent)
+         (string? handle)]})
+
+(def ->Note "Alias for ->note." ->note)
+
+(v/deftag example
+  "Represents a single example on an arbitrary Thing as identified by
+  a Handle. The Handle is intended to be some structure such as a file
+  path, record ID, UUID or other unique identifier for that singular
+  specific example."
+  [parent, handle]
+  {:pre [(thing? parent)
+         (string? handle)]})
+
+(def ->Example "Alias for ->example." ->example)
+
 ;; Helpers for walking thing paths
 
+
+(defn leaf?
+  "Predicate testing whether the input Thing is either an example or a
+  note."
+  [t]
+  (or (note? t)
+      (example? t)))
 
 (defn namespaced?
   "Predicate testing whether the input either is a namespace or has a namespace
   as a parent."
   [t]
   (or (namespace? t)
-      (def? t)))
+      (def? t)
+      (and (leaf? t)
+           (namespaced? (:parent t)))))
 
 (defn platformed?
   "Predicate testing whether the input either is a platform or has a platform as
   a parent."
   [t]
   (or (namespaced? t)
-      (platform? t)))
-
-(defn artifacted?
-  "Predicate testing whether the input either is an artifact or has an artifact
-  as a parent."
-  [t]
-  (or (platformed? t)
-      (artifact? t)))
+      (platform? t)
+      (and (leaf? t)
+           (platformed? (:parent t)))))
 
 (defn versioned?
   "Predicate testing whether the input exists within the subset of the \"thing\"
@@ -93,21 +125,27 @@
   traversal."
   [t]
   (or (platformed? t)
-      (version? t)))
+      (version? t)
+      (and (leaf? t)
+           (versioned? (:parent t)))))
 
 (defn artifacted?
   "Predicate testing whether the input either is an artifact or has an artifact
   as a parent."
   [t]
   (or (versioned? t)
-      (artifact? t)))
+      (artifact? t)
+      (and (leaf? t)
+           (artifacted? (:parent t)))))
 
 (defn grouped?
   "Predicate testing whether the input either is a group or has a group as a
   parent."
   [t]
   (or (artifacted? t)
-      (group? t)))
+      (group? t)
+      (and (leaf? t)
+           (grouped? (:parent t)))))
 
 (defn thing?
   "Predicate testing whether the input exists within the \"thing\" variant of
@@ -126,8 +164,9 @@
   "Function from an object to Maybe[String]. If the input is a thing, returns
   the name of the Thing. Otherwise returns nil."
   [t]
-  (when (thing? t)
-    (:name t)))
+  {:pre [(thing? t)
+         (not (leaf? t))]}
+  (:name t))
 
 ;; Helpers for stringifying and reading paths
 
