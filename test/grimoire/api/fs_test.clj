@@ -137,7 +137,7 @@
       (let [path  (apply str (interpose "/" p))
             thing (t/path->thing path)]
         ;;----------------------------------------
-        (api/write-notes test-config thing notes)
+        (api/write-note test-config thing notes)
         (is (= notes
                (-> test-config
                    (api/read-notes thing)

@@ -15,110 +15,123 @@
             [detritus.variants :as v]
             [version-clj.core :as semver]))
 
+;; FIXME: a config TaggedValue would be nice.
 (defn dispatch [config & more]
   (-> config :datastore :mode))
 
+;; Datastore API impl' multimethods - listing & reading
+;;--------------------------------------------------------------------
+(defmulti -list-groups dispatch)
+(defmulti -list-artifacts dispatch)
+(defmulti -list-versions dispatch)
+(defmulti -list-platforms dispatch)
+(defmulti -list-namespaces dispatch)
+(defmulti -list-defs dispatch)
+(defmulti -list-notes dispatch)
+(defmulti -list-examples dispatch)
+(defmulti -list-related dispatch)
+
+(defmulti -read-meta dispatch)
+(defmulti -read-note dispatch)
+(defmulti -read-example dispatch)
+
+;; Datastore API impl' multimethods - listing & reading
+;;--------------------------------------------------------------------
+(defmulti -write-meta dispatch)
+(defmulti -write-note dispatch)
+(defmulti -write-example dispatch)
+(defmulti -write-related dispatch)
+
 ;; Interacting with the datastore - reading
 ;;--------------------------------------------------------------------
-
-(defmulti list-groups
+(defn list-groups
   "Succeeds with a result Seq[Group] representing all Maven groups in the
   queried datastore. Will succeed with an empty result if there are no known
-  groups. Fails if the datstore isn't correctly configured or missing."
+  groups.
 
-  {:arglists '[[config]]}
-  dispatch)
+  Fails if the datstore isn't correctly configured or missing."
+  [config]
+  (-list-groups config))
 
-(defmulti list-artifacts
+(defn list-artifacts
   "Succeeds with a result Seq[Artifact] representing all Maven artifacts in the
   queried datastore that belong to the specified Group. Will Succeed with an
-  empty result if there are no known artifacts. Fails if the group is unknown or
-  if another Failure is encountered."
-  
-  {:arglists '[[config group-thing]]}
-  dispatch)
+  empty result if there are no known artifacts.
 
-(defmulti list-versions
+  Fails if the group is unknown or if another Failure is encountered."
+  
+  [config group-thing]
+  {:pre [(t/group? group-thing)]}
+  (-list-artifacts config group-thing))
+
+(defn list-versions
   "Succeeds with a result Seq[Version] representing all Maven versions in the
   queried datastore of the specified Artifact in decending version order. Could
-  succeed with an empty result if there are no known versions. Fails if the
-  specified Artifact does not exist or if another Failure is encountered."
+  succeed with an empty result if there are no known versions.
 
-  {:arglists '[[config artifact-thing]]}
-  dispatch)
+  Fails if the specified Artifact does not exist or if another Failure is
+  encountered."
 
-(defmulti list-platforms
+  [config artifact-thing]
+  {:pre [(t/artifact? artifact-thing)]}
+  (-list-versions config artifact-thing))
+
+(defn list-platforms
   "Succeeds with a result Seq[Platform] representing all Clojure dialects of the
   specified Artifact in the specified datastore. Could succeed with an empty
-  result if there is no documentation for any known dialect. Fails if the
-  specified Version does not exist or if another Failure is encountered."
+  result if there is no documentation for any known dialect.
 
-  {:arglists '[[config version-thing]]}
-  dispatch)
+  Fails if the specified Version does not exist or if another Failure is
+  encountered."
 
-(defmulti list-namespaces
+  [config version-thing]
+  {:pre [(t/version? version-thing)]}
+  (-list-platforms config version-thing))
+
+(defn list-namespaces
   "Succeeds with a result Seq[Namespace] representing all Clojure namespaces in
-  the specified Version. Could succeed with an empty result. Fails if the
-  specified Platform does not exist or if another Failure is encountered."
+  the specified Version. Could succeed with an empty result.
 
-  {:arglists '[[config platform-thing]]}
-  dispatch)
+  Fails if the specified Platform does not exist or if another Failure is
+  encountered."
 
-(defmulti list-defs
+  [config platform-thing]
+  {:pre [(t/platform? platform-thing)]}
+  (-list-namespaces config platform-thing))
+
+(defn list-defs
   "Succeeds with a result Seq[Def] representing all Clojure defs in the
-  specified Namespace. Could succeed with an empty result. Fails if the
-  specified Namespace does not exist or if another failure is encountered."
+  specified Namespace. Could succeed with an empty result.
+
+  Fails if the specified Namespace does not exist or if another failure is
+  encountered."
   
-  {:arglists '[[config namespace-thing]]}
-  dispatch)
+  [config namespace-thing]
+  {:pre [(t/namespace? namespace-thing)]}
+  (-list-defs config namespace-thing))
 
-(defmulti thing->prior-versions
-  "Succeeds with a result Seq[Thing] representing the argument Thing at earlier
-  or equal versions sorted in decending order. Note that this op only supports
-  Versions, Namespaces and Defs. Artifacts and Groups do not have versions, and
-  will give Failures.
+(defn list-notes
+  "Succeeds with a result Seq[Note] representing all the Notes known on equal or
+  prior versions of the given Thing.
 
-  Will Fail if a nested Failure is encountered."
+  Fails if the specified Thing does not exist, or if a nested Failure is
+  encountered."
 
-  {:arglists '[[config thing]]}
-  dispatch)
+  [config thing]
+  {:pre [(t/thing? thing)]}
+  (-list-notes config thing))
 
-(defmulti list-notes
-  "Succeeds with a result Seq[Note] representing all the Notes known
-  on equal or prior versions of the given Thing.
-
-  Fails if the specified Thing does not exist, or if a nested Failure
-  is encountered."
-  {:arglists '[[config thing]]}
-  dispatch)
-
-(defmulti read-note
+(defn read-note
   "Succeeds with a result String being the text of notes read as identified by a given notes handle.
 
   Will Fail if the given Notes Thing does not exist, or if a nested Failure is
   encountered."
 
-  {:arglists '[[config note-thing]]}
-  dispatch)
+  [config note-thing]
+  {:pre [(t/note? note-thing)]}
+  (-read-note config note-thing))
 
-(defn read-notes
-  "Succeeds with a result Seq[Version, string], being the zip of list-notes with
-  read-note for each listed note.
-
-  Fails if a nested Failure is encountered."
-  [config thing]
-  (let [?notes (list-notes config thing)]
-    (if (e/succeed? ?notes)
-      (try
-        (e/succeed
-         (for [note (e/result ?notes)]
-           [(t/thing->version note)
-            (e/result (read-note config note))]))
-        (catch Exception e
-          (e/fail (.getMessage e))))
-      ?notes)))
-
-(defmulti list-examples
+(defn list-examples
   "Succeeds with a result Seq[Example] encoding for all examples on prior or
   equal versions of the given thing sorted in decending version order.
 
@@ -128,48 +141,56 @@
   Note that future versions of this API may extend examples to Namespaces and
   Versions."
 
-  {:arglists '[[config def-thing]]}
-  dispatch)
+  [config def-thing]
+  {:pre [(t/def? def-thing)]}
+  (-list-examples config def-thing))
 
-(defmulti read-example
+(defn read-example
   "Succeeds with a result Seq[Tuple[version, example-text]] for all examples on
   prior or equal versions of the given thing sorted in decending version
-  order. Will Fail if the given Def does not exist, or if a nested Failure is
-  encountered.
+  order.
+
+  Fails if the given Def does not exist, or if a nested Failure is encountered.
 
   Note that future versions of this API may extend examples to Namespaces and
   Versions."
 
-  {:arglists '[[config example-thing]]}
-  dispatch)
+  [config example-thing]
+  {:pre [(t/example? example-thing)]}
+  (-read-example config example-thing))
 
-(defmulti read-meta
+(defn read-meta
   "Succeeds returning a Map being the metadata for the specified Thing. No
-  backtracking is done to find metadata on prior Versions of the given
-  Thing. Fails if the given Thing does not exist.
+  backtracking is done to find metadata on prior Versions of the given Thing.
+
+  Fails if the given Thing does not exist.
 
   Note that per the API contract, failure to find a metadata descriptor for a
   Thing is equivalent to its absence even if other data bout the Thing could be
   found."
 
-  {:arglists '[[config thing]]}
-  dispatch)
+  [config thing]
+  {:pre [(t/thing? thing)]}
+  (-read-meta config thing))
 
-(defmulti read-related
+(defn list-related
   "Succeeds with a result Seq[Def] being the sequence of Things \"related\"
   according to the documentation writer to the Thing for which related entities
   was requested.
 
+  Fails if the given Thing does not exist, or if a nested Failure is
+  encountered.
+
   As of 0.6.X, this operation is only defined over Defs, however future versions
   of this API may extend this operation to other types."
 
-  {:arglists '[[config thing]]}
-  dispatch)
+  [config thing]
+  {:pre [(t/thing? thing)]}
+  (-list-related config thing))
 
 ;; Interacting with the datastore - writing
 ;;--------------------------------------------------------------------
-
-(defmulti write-meta
+(defn write-meta
   "Writes a map, being documentation data, into the datastore as specified by
   config at the def denoted by thing. Note that non-readable structures such as
   Namespaces must be stringified or removed by users. This function provides no
@@ -191,34 +212,50 @@
   Expected keys for namespaces:
   - :doc      -> documentation string"
 
-  {:arglists '[[config thing data]]}
-  dispatch)
+  [config thing data]
+  {:pre [(map? data)
+         (t/thing? thing)]}
+  (-write-meta config thing data))
 
-(defmulti write-notes
+(defn write-note
   "Writes a string into the datastore specified by the config at the path
+  represented by Example. Returns no meaningful value. Note that Example need
+  not be rooted on a def."
+
+  [config note data]
+  {:pre [(t/note? note)]}
+  (-write-note config note data))
+
+(defn write-example
+  "Writes an example into the datastore specified by the config at the path
   represented by thing. Note that thing need not be a def."
 
-  {:arglists '[[config thing data]]}
-  dispatch)
+  [config example data]
+  {:pre [(t/example? example)]}
+  (-write-example config example data))
 
-(defmulti write-example
-  "Writes an example into the datastore specified by the config at the
-  path represented by thing. Note that thing need not be a def."
-
-  {:arglists '[[config thing data]]}
-  dispatch)
-
-(defmulti write-related
-  "Writes a sequence of things representing defs into the datastore's
-  related file as specified by the target thing."
+(defn write-related
+  "Writes a sequence of things representing defs into the datastore's related
+  file as specified by the target thing."
   
-  {:arglists '[[config thing related-things]]}
-  dispatch)
+  [config thing related-things]
+  {:pre [(every? t/def? related-things)
+         (t/def? thing)]}
+  (-write-related config thing related-things))
 
 ;; Default implementations for operations for which such a thing is sane
 ;;--------------------------------------------------------------------
+(defn thing->prior-versions
+  "Succeeds with a result Seq[Thing] representing the argument Thing at earlier
+  or equal versions sorted in decending order. Note that this op only supports
+  Versions, Namespaces and Defs. Artifacts and Groups do not have versions, and
+  will give Failures. The Version component of a Note or an Example is naming,
+  and versions of these Things are not guranteed to be interchangable. Trying to
+  get a prior version with a
 
-(defmethod thing->prior-versions :default [config thing]
+  Fails if a nested Failure is encountered."
+
+  [config thing]
   {:pre [(t/versioned? thing)]}
   (let [thing    (t/ensure-thing thing)
         currentv (t/thing->version thing)               ; version handle
@@ -238,3 +275,20 @@
           ;; the case.
           (t/path->thing (str (t/thing->path v) "/" unv-path)))
         e/succeed)))
+
+(defn read-notes
+  "Succeeds with a result Seq[Version, string], being the zip of list-notes with
+  read-note for each listed note.
+
+  Fails if a nested Failure is encountered."
+  [config thing]
+  (let [?notes (list-notes config thing)]
+    (if (e/succeed? ?notes)
+      (try
+        (e/succeed
+         (for [note (e/result ?notes)]
+           [(t/thing->version note)
+            (e/result (read-note config note))]))
+        (catch Exception e
+          (e/fail (.getMessage e))))
+      ?notes)))

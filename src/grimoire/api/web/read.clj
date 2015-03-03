@@ -24,7 +24,6 @@
 
 ;; Interacting with the datastore - reading
 ;;--------------------------------------------------------------------
-
 (def baseurl "/api/v1/")
 
 (defn grim-succeed?
@@ -82,88 +81,32 @@
 
 ;; API imp'l
 ;;--------------------------------------------------------------------
-
-(defn list-groups
-  "Implementation of grimoire.api/list-groups. This function should not be used
-  directly, please use the wrapper multimethod in grimoire.api."
-  [config]
+(defmethod api/-list-groups :web [config]
   (do-thing-req config "groups" t/->Group nil))
 
-(defmethod api/list-groups :web [config]
-  (list-groups config))
-
-(defn list-artifacts
-  "Implementation of grimoire.api/list-artifacts. This function should not be
-  used directly, please use the wrapper multimethod in grimoire.api."
-  [config group-thing]
+(defmethod api/-list-artifacts :web [config group-thing]
   (do-thing-req config "artifacts" t/->Artifact group-thing))
 
-(defmethod api/list-artifacts :web [config group-thing]
-  (list-artifacts config group-thing))
-
-(defn list-versions
-  "Implementation of grimoire.api/list-versions. This function should not be
-  used directly, please use the wrapper multimethod in grimoire.api."
-  [config artifact-thing]
+(defmethod api/-list-versions :web [config artifact-thing]
   (do-thing-req config "versions" t/->Version artifact-thing))
 
-(defmethod api/list-versions :web [config artifact-thing]
-  (list-versions config artifact-thing))
-
-(defn list-namespaces
-  "Implementation of grimoire.api/list-namespaces. This function should not be
-  used directly, please use the wrapper multimethod in grimoire.api."
-  [config version-thing]
+(defmethod api/-list-namespaces :web [config version-thing]
   (do-thing-req config "namespaces" t/->Ns version-thing))
 
-(defmethod api/list-namespaces :web [config version-thing]
-  (list-namespaces config version-thing))
-
-(defn list-defs
-  "Implementation of grimoire.api/list-defs. This function should not be
-  used directly, please use the wrapper multimethod in grimoire.api."
-  [config namespace-thing]
+(defmethod api/-list-defs :web [config namespace-thing]
   (do-thing-req config "all" t/->Def namespace-thing))
 
-(defmethod api/list-defs :web [config namespace-thing]
-  (list-defs config namespace-thing))
-
-(defn read-notes
-  "Implementation of grimoire.api/read-notes. This function should not be used
-  directly, please use the wrapper multimethod in grimoire.api."
-  [config thing]
-  {:pre [(t/def? thing)]}
+(defmethod api/-read-note :web [config thing]
   (do-data-req config thing "notes"))
 
-(defmethod api/read-notes :web [config thing]
-  (read-notes config thing))
+(defmethod api/-read-example :web [config ex-thing]
+  {:pre [(t/example? ex-thing)]}
+  (do-data-req config ex-thing "example"))
 
-(defn read-examples
-  "Implementation of grimoire.api/read-examples. This function should
-  not be used directly, please use the wrapper multimethod in
-  grimoire.api."
-  [config def-thing]
-  {:pre [(t/def? def-thing)]}
-  (do-data-req config def-thing "examples"))
-
-(defmethod api/read-examples :web [config def-thing]
-  (read-examples config def-thing))
-
-(defn read-meta
-  "Implementation of grimoire.api/read-meta. This function should not
-  be used directly, please use the wrapper multimethod in
-  grimoire.api."
-  [config thing]
+(defmethod api/-read-meta :web [config thing]
   (do-data-req config thing "meta"))
 
-(defmethod api/read-meta :web [config thing]
-  (read-meta config thing))
-
-(defn read-related
-  "Implementation of grimoire.api/read-related. This function should not
-  be used directly, please use the wrapper multimethod in
-  grimoire.api."
-  [config def-thing]
+(defmethod api/-list-related :web [config def-thing]
   {:pre [(t/def? def-thing)]}
   ;; FIXME: not implemented on the Grimoire side see clojure-grimoire/grimoire#152
   ;; Grimoire will yeild Succeed[Seq[qualifiedSymbol]]
@@ -174,6 +117,3 @@
            (map (comp t/path->thing :uri))
            succeed)
       ?res)))
-
-(defmethod api/read-related :web [config def-thing]
-  (read-related config def-thing))

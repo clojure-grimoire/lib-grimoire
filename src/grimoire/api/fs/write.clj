@@ -7,7 +7,7 @@
 
 ;; Interacting with the datastore - writing
 ;;--------------------------------------------------------------------
-(defmethod api/write-meta :filesystem [config thing data]
+(defmethod api/-write-meta :filesystem [config thing data]
   (let [thing  (t/ensure-thing thing)
         _      (assert thing)
         handle (impl/thing->meta-handle config thing)
@@ -16,7 +16,7 @@
     (spit handle (pr-str data))
     nil))
 
-(defmethod api/write-notes :filesystem [config thing data]
+(defmethod api/-write-note :filesystem [config thing data]
   {:pre [(string? data)
          thing
          config
@@ -30,7 +30,7 @@
 
 ;; FIXME: add write-example
 
-(defmethod api/write-related :filesystem [config thing related-things]
+(defmethod api/-write-related :filesystem [config thing related-things]
   (let [thing  (t/ensure-thing thing)
         _      (assert thing)
         _      (assert (t/def? thing))
