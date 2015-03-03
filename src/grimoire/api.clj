@@ -218,13 +218,12 @@
   (-write-meta config thing data))
 
 (defn write-note
-  "Writes a string into the datastore specified by the config at the path
-  represented by Example. Returns no meaningful value. Note that Example need
-  not be rooted on a def."
+  "Writes a string into the datastore specified by the config and the Thing to
+  which the resulting Note will be attached. Returns no meaningful value."
 
-  [config note data]
-  {:pre [(t/note? note)]}
-  (-write-note config note data))
+  [config thing data]
+  {:pre [(t/thing? thing)]}
+  (-write-note config thing data))
 
 (defn write-example
   "Writes an example into the datastore specified by the config at the path

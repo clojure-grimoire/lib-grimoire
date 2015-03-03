@@ -103,14 +103,14 @@
                          h (impl/thing->notes-handle config thing)]
                   :when (.exists h)
                   :when (.isFile h)]
-              (t/->Note thing, (.getCannonicalPath h)))
+              (t/->Note thing, (.getPath h)))
             succeed)
 
         ;; versions is a Fail, pass it down
         versions))
 
-    (let [h (impl/thing->notes-handle config thing)]
-      (succeed [(t/->Note thing, (.getCannonicalPath h))]))))
+    (let [^java.io.File h (impl/thing->notes-handle config thing)]
+      (succeed [(t/->Note thing, (.getPath h))]))))
 
 (defmethod api/-list-examples :filesystem [config thing]
   {:pre [(t/thing? thing)]}
@@ -121,7 +121,7 @@
                        h (impl/thing->handle config :examples prior-thing)]
                 ex    (.listFiles h)
                 :when (.isFile ex)]
-            (t/->Example thing, (.getCannonicalPath ex)))
+            (t/->Example thing, (.getPath ex)))
           succeed)
 
       ;; versions is a Fail, pass it down
@@ -130,7 +130,13 @@
 ;; Read things
 ;;--------------------
 
-;; FIXME: read-note
+(defmethod api/-read-note :filesystem [config thing]
+  (let [handle (impl/thing->notes-handle config (t/thing->parent thing))]
+    (if (.exists handle) ;; guard against missing files
+      (-> handle slurp succeed)
+      (fail (str "No note for object "
+                 (t/thing->path (t/thing->parent thing)))))))
+
 ;; FIXME: read-example
 
 (defmethod api/-read-meta :filesystem [config thing]
