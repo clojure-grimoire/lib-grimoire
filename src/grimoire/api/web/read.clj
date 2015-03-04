@@ -20,6 +20,7 @@
             [grimoire.util :as u]
             [grimoire.either :refer [with-result succeed? result succeed fail either?]]
             [grimoire.things :as t]
+            [grimoire.api.web :as web]
             [clojure.edn :as edn]))
 
 ;; Interacting with the datastore - reading
@@ -45,7 +46,11 @@
 
   Forges a Grimoire API V0 request for a given Thing and Op."
   [config thing op]
-  (str (-> config :datastore :host)
+  {:pre [(web/Config? config)
+         (or (t/thing? thing)
+             (nil? thing))
+         (string? op)]}
+  (str (:host config)
        baseurl
        (when thing (t/thing->path thing))
        "?op=" op "&type=edn"))
@@ -57,7 +62,7 @@
   the various arguments. Returns the entire result of the Grimoire request
   unaltered and wrapped in Either."
   [config thing op]
-  {:post [either?]}
+  {:post [(either? %)]}
   (let [?res (-> (make-request config thing op)
                  slurp
                  edn/read-string)]
@@ -81,32 +86,32 @@
 
 ;; API imp'l
 ;;--------------------------------------------------------------------
-(defmethod api/-list-groups :web [config]
+(defmethod api/-list-groups ::web/Config [config]
   (do-thing-req config "groups" t/->Group nil))
 
-(defmethod api/-list-artifacts :web [config group-thing]
+(defmethod api/-list-artifacts ::web/Config [config group-thing]
   (do-thing-req config "artifacts" t/->Artifact group-thing))
 
-(defmethod api/-list-versions :web [config artifact-thing]
+(defmethod api/-list-versions ::web/Config [config artifact-thing]
   (do-thing-req config "versions" t/->Version artifact-thing))
 
-(defmethod api/-list-namespaces :web [config version-thing]
+(defmethod api/-list-namespaces ::web/Config [config version-thing]
   (do-thing-req config "namespaces" t/->Ns version-thing))
 
-(defmethod api/-list-defs :web [config namespace-thing]
+(defmethod api/-list-defs ::web/Config [config namespace-thing]
   (do-thing-req config "all" t/->Def namespace-thing))
 
-(defmethod api/-read-note :web [config thing]
+(defmethod api/-read-note ::web/Config [config thing]
   (do-data-req config thing "notes"))
 
-(defmethod api/-read-example :web [config ex-thing]
+(defmethod api/-read-example ::web/Config [config ex-thing]
   {:pre [(t/example? ex-thing)]}
   (do-data-req config ex-thing "example"))
 
-(defmethod api/-read-meta :web [config thing]
+(defmethod api/-read-meta ::web/Config [config thing]
   (do-data-req config thing "meta"))
 
-(defmethod api/-list-related :web [config def-thing]
+(defmethod api/-list-related ::web/Config [config def-thing]
   {:pre [(t/def? def-thing)]}
   ;; FIXME: not implemented on the Grimoire side see clojure-grimoire/grimoire#152
   ;; Grimoire will yeild Succeed[Seq[qualifiedSymbol]]

@@ -2,20 +2,19 @@
   (:require [grimoire.api :as api]
             [grimoire.things :as t]
             [grimoire.either :refer [succeed? result]]
+            [grimoire.api.web :refer [->Config]]
             [grimoire.api.web.read]
             [clojure.test :refer :all]))
 
 (def test-config
-  {:datastore
-   {:mode :web
-    :host "http://127.0.0.1:3000"}}) ;; test against local Grimoire instance
+  (->Config "http://127.0.0.1:3000"))
 
 ;; Listing tests
 ;;------------------------------------------------------------------------------
 
 (deftest list-groups-test
   (let [?res (-> test-config
-                api/list-groups)]
+                 api/list-groups)]
     (is (succeed? ?res))
     (doseq [?g (result ?res)]
       (is (t/group? ?g)))))
@@ -23,7 +22,7 @@
 (deftest list-artifacts-test
   (let [g    (t/->Group "org.clojure")
         ?res (-> test-config
-                (api/list-artifacts g))]
+                 (api/list-artifacts g))]
     (is (succeed? ?res))
     (doseq [?a (result ?res)]
       (is (t/artifact? ?a)))))

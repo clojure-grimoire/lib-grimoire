@@ -2,15 +2,15 @@
   (:require [grimoire.api :as api]
             [grimoire.things :as t]
             [grimoire.either :refer [result]]
+            [grimoire.api.fs :refer [->Config]]
             [grimoire.api.fs.read]
             [grimoire.api.fs.write]
             [clojure.test :refer :all]))
 
 (def test-config
-  {:datastore
-   {:docs  "resources/test/docs/"
-    :notes "resources/test/notes/"
-    :mode  :filesystem}})
+  (->Config "resources/test/docs/"
+            "resources/test/notes/"
+            "resources/test/notes/"))
 
 (def test-resources
   [

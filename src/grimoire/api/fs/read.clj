@@ -5,6 +5,7 @@
             [grimoire.api :as api]
             [grimoire.util :refer [normalize-version]]
             [grimoire.either :refer [succeed result fail succeed?]]
+            [grimoire.api.fs :as fs]
             [grimoire.api.fs.impl :as impl]
             [clojure.java.io :as io]
             [clojure.string :as string]
@@ -14,8 +15,8 @@
 
 ;; List things
 ;;--------------------
-(defmethod api/-list-groups :filesystem [config]
-  (let [handle (io/file (-> config :datastore :docs))]
+(defmethod api/-list-groups ::fs/Config [config]
+  (let [handle (io/file (:docs config))]
     (if (.isDirectory handle)
       (-> (for [d     (.listFiles handle)
                 :when (.isDirectory d)]
@@ -23,20 +24,20 @@
           succeed)
       (fail "Could not find store directory"))))
 
-(defmethod api/-list-artifacts :filesystem [config thing]
+(defmethod api/-list-artifacts ::fs/Config [config thing]
   (let [thing  (t/ensure-thing thing)
         thing  (t/thing->group thing)
         _      (assert thing)
         handle (impl/thing->handle config :else thing)]
     (if (.isDirectory handle)
       (-> (for [d     (.listFiles handle)
-               :when (.isDirectory d)]
+                :when (.isDirectory d)]
             (t/->Artifact thing (.getName d)))
           succeed)
       (fail (str "No such group "
                  (t/thing->path thing))))))
 
-(defmethod api/-list-versions :filesystem [config thing]
+(defmethod api/-list-versions ::fs/Config [config thing]
   (let [thing    (t/ensure-thing thing)
         artifact (t/thing->artifact thing)
         _        (assert artifact)
@@ -51,7 +52,7 @@
       (fail (str "No such artifact "
                  (t/thing->path thing))))))
 
-(defmethod api/-list-platforms :filesystem [config thing]
+(defmethod api/-list-platforms ::fs/Config [config thing]
   (let [thing   (t/ensure-thing thing)
         _       (assert thing)
         version (t/thing->version thing)
@@ -65,7 +66,7 @@
       (fail (str "No such version "
                  (t/thing->path thing))))))
 
-(defmethod api/-list-namespaces :filesystem [config thing]
+(defmethod api/-list-namespaces ::fs/Config [config thing]
   (let [thing    (t/ensure-thing thing)
         _        (assert thing)
         platform (t/thing->platform thing)
@@ -79,7 +80,7 @@
       (fail (str "No such platform "
                  (t/thing->path thing))))))
 
-(defmethod api/-list-defs :filesystem [config thing]
+(defmethod api/-list-defs ::fs/Config [config thing]
   (let [thing     (t/ensure-thing thing)
         _         (assert thing)
         namespace (t/thing->namespace thing)
@@ -93,7 +94,7 @@
       (fail (str "No such namespace "
                  (t/thing->path thing))))))
 
-(defmethod api/-list-notes :filesystem [config thing]
+(defmethod api/-list-notes ::fs/Config [config thing]
   {:pre [(t/thing? thing)]}
   (if-not (t/versioned? thing)
     (let [versions (api/thing->prior-versions config thing)]
@@ -112,7 +113,7 @@
     (let [^java.io.File h (impl/thing->notes-handle config thing)]
       (succeed [(t/->Note thing, (.getPath h))]))))
 
-(defmethod api/-list-examples :filesystem [config thing]
+(defmethod api/-list-examples ::fs/Config [config thing]
   {:pre [(t/thing? thing)]}
   (let [versions (api/thing->prior-versions config thing)]
     (if (succeed? versions)
@@ -130,7 +131,7 @@
 ;; Read things
 ;;--------------------
 
-(defmethod api/-read-note :filesystem [config thing]
+(defmethod api/-read-note ::fs/Config [config thing]
   (let [handle (impl/thing->notes-handle config (t/thing->parent thing))]
     (if (.exists handle) ;; guard against missing files
       (-> handle slurp succeed)
@@ -139,7 +140,7 @@
 
 ;; FIXME: read-example
 
-(defmethod api/-read-meta :filesystem [config thing]
+(defmethod api/-read-meta ::fs/Config [config thing]
   (let [thing  (t/ensure-thing thing)
         handle (impl/thing->meta-handle config thing)]
     (if (.exists handle) ;; guard against missing files
@@ -151,7 +152,7 @@
       (fail (str "No meta for object "
                  (t/thing->path thing))))))
 
-(defmethod api/-list-related :filesystem [config thing]
+(defmethod api/-list-related ::fs/Config [config thing]
   ;; FIXME: This assumes the old Grimoire 0.3.X related file format,
   ;; being a sequence of fully qualified symbols not Thing URIs. Will
   ;; work, but not optimal in terms of utility going forwards.

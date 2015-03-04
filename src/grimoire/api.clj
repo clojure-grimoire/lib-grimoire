@@ -17,7 +17,7 @@
 
 ;; FIXME: a config TaggedValue would be nice.
 (defn dispatch [config & more]
-  (-> config :datastore :mode))
+  (v/tag config))
 
 ;; Datastore API impl' multimethods - listing & reading
 ;;--------------------------------------------------------------------

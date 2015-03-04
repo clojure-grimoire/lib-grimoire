@@ -3,11 +3,15 @@
   (:refer-clojure :exclude [isa?])
   (:require [grimoire.things :as t]
             [grimoire.api :as api]
+            [grimoire.api.fs :as fs]
             [grimoire.api.fs.impl :as impl]))
 
 ;; Interacting with the datastore - writing
 ;;--------------------------------------------------------------------
-(defmethod api/-write-meta :filesystem [config thing data]
+(defmethod api/-write-meta ::fs/Config [config thing data]
+  {:pre [(fs/Config? config)
+         (t/thing? thing)
+         (map? data)]}
   (let [thing  (t/ensure-thing thing)
         _      (assert thing)
         handle (impl/thing->meta-handle config thing)
@@ -16,11 +20,10 @@
     (spit handle (pr-str data))
     nil))
 
-(defmethod api/-write-note :filesystem [config thing data]
-  {:pre [(string? data)
-         thing
-         config
-         (-> config :datastore :notes)]}
+(defmethod api/-write-note ::fs/Config [config thing data]
+  {:pre [(fs/Config? config)
+         (t/thing? thing)
+         (string? data)]}
   (let [thing  (t/ensure-thing thing)
         _      (assert thing)
         handle (impl/thing->notes-handle config thing)
@@ -30,7 +33,10 @@
 
 ;; FIXME: add write-example
 
-(defmethod api/-write-related :filesystem [config thing related-things]
+(defmethod api/-write-related ::fs/Config [config thing related-things]
+  {:pre [(fs/Config? config)
+         (t/thing? thing)
+         (every? t/thing? related-things)]}
   (let [thing  (t/ensure-thing thing)
         _      (assert thing)
         _      (assert (t/def? thing))
