@@ -111,7 +111,9 @@
         versions))
 
     (let [^java.io.File h (impl/thing->notes-handle config thing)]
-      (succeed [(t/->Note thing, (.getPath h))]))))
+      (if (.exists h)
+        (succeed [(t/->Note thing, (.getPath h))])
+        (fail "No notes file!")))))
 
 (defmethod api/-list-examples ::fs/Config [config thing]
   {:pre [(t/thing? thing)]}
