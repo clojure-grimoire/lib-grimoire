@@ -123,7 +123,8 @@
   (-list-notes config thing))
 
 (defn read-note
-  "Succeeds with a result String being the text of notes read as identified by a given notes handle.
+  "Succeeds with a result String being the text of notes read as identified by a
+  given notes handle.
 
   Will Fail if the given Notes Thing does not exist, or if a nested Failure is
   encountered."
@@ -148,8 +149,7 @@
 
 (defn read-example
   "Succeeds with a result Seq[Tuple[version, example-text]] for all examples on
-  prior or equal versions of the given thing sorted in decending version
-  order.
+  prior or equal versions of the given thing sorted in decending version order.
 
   Fails if the given Def does not exist, or if a nested Failure is encountered.
 
@@ -281,7 +281,11 @@
   "Succeeds with a result Seq[Version, string], being the zip of list-notes with
   read-note for each listed note.
 
-  Fails if a nested Failure is encountered."
+  Fails if a nested Failure is encountered.
+
+  Legacy from the 0.7.X and earlier API. Note that this function does _not_
+  return the Note instances themselves, only the versions each read note is
+  attached to."
   [config thing]
   (let [?notes (list-notes config thing)]
     (if (e/succeed? ?notes)
