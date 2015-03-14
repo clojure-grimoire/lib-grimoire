@@ -15,7 +15,9 @@
             [detritus.variants :as v]
             [version-clj.core :as semver]))
 
-(defn dispatch [config & more]
+(defn dispatch
+  "Common dispatch function for all the API multimethods"
+  [config & more]
   (v/tag config))
 
 ;; Datastore API impl' multimethods - listing & reading
