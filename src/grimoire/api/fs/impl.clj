@@ -2,49 +2,71 @@
   "Filesystem datastore implementation details. This namespace is not part of
   the intentional API exposed in `grimoire.api` and should not be used by
   library client code."
-  (:refer-clojure :exclude [isa?])
   (:require [grimoire.util :as util]
-            [grimoire.things :refer :all]
+            [grimoire.things :as t]
+            [grimoire.api.fs :refer [Config?]]
+            [detritus.variants :as v]
             [clojure.java.io :as io]))
+
+(defn file?
+  [h]
+  (instance? java.io.File h))
 
 ;; Private helpers for getting fs handles
 ;;--------------------
+
+;; FIXME: munging needs to happen here
 (defn thing->handle
   "Helper for grabbing handles for reading/writing.
 
   :meta     -> .edn file
   :related  -> .txt
   :notes    -> .md file
-  :examples -> dir"
+  :examples -> /examples/
+  :else     -> /"
 
-  [{store :datastore} which thing]
-  (let [which-store (if-not (= :notes which)
-                      :docs :notes)
-        d           (get store which (which-store store))
-        parent      (:parent thing)
-        p           (io/file (str d "/" (when parent (thing->path parent))))
-        e           (case which
-                      (:meta)     "/meta.edn"
-                      (:related)  "/related.txt"
-                      (:examples) "/examples/"
-                      (:notes)    "/notes.md"
-                      nil)
-        n           (if (= :def (:type thing))
-                      (util/munge (:name thing))
-                      (:name thing))
-        h           (io/file p (str n e))]
+  [cfg which thing]
+  {:pre  [(#{:meta :related :notes :examples :else} which)
+          (t/thing? thing)
+          (Config? cfg)]
+   :post [(file? %)]}
+  (let [d      (get cfg ({:meta     :docs
+                          :else     :docs
+                          :related  :notes
+                          :notes    :notes
+                          :examples :examples}
+                         which))
+        parent (t/thing->parent thing)
+        p      (io/file (str d "/" (when parent (t/thing->path parent))))
+        e      (case which
+                 (:meta)     "/meta.edn"
+                 (:related)  "/related.txt"
+                 (:examples) "/examples/"
+                 (:notes)    "/notes.md"
+                 nil)
+        n      (if (= ::t/def (v/tag thing))
+                 (util/munge (t/thing->name thing))
+                 (t/thing->name thing))
+        h      (io/file p (str n e))]
     h))
 
 (defn thing->notes-handle
   "Helper for grabbing the handle of a notes file "
 
   [c thing]
+  {:pre  [(Config? c)
+          (t/thing? thing)]
+   :post [(file? %)]}
   (thing->handle c :notes thing))
 
 (defn thing->example-handle
   "Helper for getting a file handle for reading and writing a named example."
 
   [c thing name]
+  {:pre  [(Config? c)
+          (t/thing? thing)
+          (string? name)]
+   :post [(file? %)]}
   (let [h (thing->handle c :examples thing)]
     (io/file h (str name ".clj"))))
 
@@ -52,6 +74,9 @@
   "Helper for getting a file handle for reading and writing meta"
 
   [c thing]
+  {:pre  [(Config? c)
+          (t/thing? thing)]
+   :post [(file? %)]}
   (let [h (thing->handle c :meta thing)]
     h))
 
@@ -59,15 +84,8 @@
   "Helper for getting a file handle for reading and writing related files"
 
   [c thing]
+  {:pre  [(Config? c)
+          (t/thing? thing)]
+   :post [(file? %)]}
   (let [h (thing->handle c :related thing)]
     h))
-
-(defn update
-  "λ [{A → B} A (λ [B args*] → C) args*] → {A → C}
-
-  Updates a key in the map by applying f to the value at that key more
-  arguments, returning the resulting map."
-
-  [map key f & args]
-  (assoc map key
-         (apply f (get map key) args)))

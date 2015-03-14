@@ -1,27 +1,18 @@
 (ns grimoire.either
   "Quick and dirty implementation of something like Haskell's Either[Success,
   Failure] for Clojure. Not the nicest thing in the world, but it'll do the
-  job. Used to indicate success and failure throughout the lib-grimoire API.")
-
-(defn succeed
-  "λ [t] → Succeed[t]
-
-  Type constructor. Returns a pair [:succeed x] for all x.
+  job. Used to indicate success and failure throughout the lib-grimoire API."
+  (:require [detritus.variants :as v]))
+ 
+(v/deftag Succeess
+  "λ [t] → Success[t]
 
   ∀x (succeed? (succeed x)) == true
   ∀x (result (succeed x)) == x"
-  [x]
-  [:succeed x])
+  [result])
 
-(defn succeed?
-  "λ [t] → Bool
-
-  Type predicate. Matches only two-vectors [:succeed x] as documented in the
-  succeed constructor."
-  [x]
-  {:pre [(vector? x)
-         (= 2 (count x))]}
-  (= :succeed (first x)))
+(def succeed  ->Succeess)
+(def succeed? Succeess?)
 
 (defn result
   "λ [Succeed[t]] → t
@@ -30,36 +21,28 @@
   succeed. Otherwise encounters an assertion failure (type error)."
   [x]
   {:pre [(succeed? x)]}
-  (second x))
+  (:result x))
 
-(defn fail
+(v/deftag Failure
   "λ [t] → Fail[x]
 
   Type constructor. Returns a pair [:fail x] for all x.
 
   ∀x (fail? (fail x)) == true
   ∀x (message (fail x)) == x"
-  [x]
-  [:fail x])
+  [message])
 
-(defn fail?
-  "λ [t] → Bool
-
-  Type predicate. Matches only two-vectors [:fail x] as documented in
-  the fail constructor."
-  [x]
-  {:pre [(vector? x)
-         (= 2 (count vector))]}
-  (= :fail (first x)))
+(def fail  ->Failure)
+(def fail? Failure?)
 
 (defn message
-  "λ [Fail[t]] → t
+  "λ [Failure[t]] → t
 
   Value extractor. For a failure value, unboxes the result of the
   failure. Otherwise encounters an assertion failure (type error)."
   [x]
   {:pre [(fail? x)]}
-  (second x))
+  (:message x))
 
 (defn either?
   "λ [t] → Bool
@@ -67,9 +50,8 @@
   Type predicate, matching either succeed or failure structures. Intended as a
   postcondition for maybe functions."
   [x]
-  (and (vector? x)
-       (= 2 (count x))
-       (#{:succeed :fail} (first x))))
+  (or (succeed? x)
+      (fail? x)))
 
 (defmacro with-result
   "This macro is a helper designed to emulate the Haskell pattern matching which
@@ -101,14 +83,15 @@
   ([[binding form] left]
    `(let [res# ~form]
       (if (succeed? res#)
-        (let [~binding res#]
+        (let [~binding (result res#)]
           (try ~left
                (catch Exception e# (fail e#))))
         res#)))
 
   ([[binding form] left right]
    {:pre [(symbol? binding)]}
-   `(let [~binding ~form]
-      (try (if (succeed? ~binding)
-             ~left ~right)
+   `(let [x# ~form]
+      (try (if (succeed? x#)
+             (let [~binding (result x#)] ~left)
+             (let [~binding (message x#)] ~right))
            (catch Exception e# (fail e#))))))
