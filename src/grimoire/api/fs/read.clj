@@ -120,10 +120,10 @@
   (let [versions (api/thing->prior-versions config thing)]
     (if (succeed? versions)
       (-> (for [prior-thing (result versions)
-                :let  [v (t/thing->name (t/thing->version prior-thing))
-                       h (impl/thing->handle config :examples prior-thing)]
-                ex    (.listFiles h)
-                :when (.isFile ex)]
+                :let        [v (t/thing->name (t/thing->version prior-thing))
+                             h (impl/thing->handle config :examples prior-thing)]
+                ex          (.listFiles h)
+                :when       (.isFile ex)]
             (t/->Example thing, (.getPath ex)))
           succeed)
 
