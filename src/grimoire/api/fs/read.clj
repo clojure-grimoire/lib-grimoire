@@ -18,10 +18,10 @@
 (defmethod api/-list-groups ::fs/Config [config]
   (let [handle (io/file (:docs config))]
     (if (.isDirectory handle)
-      (-> (for [d     (.listFiles handle)
-                :when (.isDirectory d)]
-            (t/->Group (.getName d)))
-          succeed)
+      (succeed
+       (for [d     (.listFiles handle)
+             :when (.isDirectory d)]
+         (t/->Group (.getName d))))
       (fail "Could not find store directory"))))
 
 (defmethod api/-list-artifacts ::fs/Config [config thing]
@@ -30,12 +30,14 @@
         _      (assert thing)
         handle (impl/thing->handle config :else thing)]
     (if (.isDirectory handle)
-      (-> (for [d     (.listFiles handle)
-                :when (.isDirectory d)]
-            (t/->Artifact thing (.getName d)))
-          succeed)
-      (fail (str "No such group "
-                 (t/thing->path thing))))))
+      (succeed
+       (for [d     (.listFiles handle)
+             :when (.isDirectory d)]
+         (t/->Artifact thing (.getName d))))
+      (->> thing
+           t/thing->path
+           (str "No such group ")
+           fail))))
 
 (defmethod api/-list-versions ::fs/Config [config thing]
   (let [thing    (t/ensure-thing thing)
@@ -59,10 +61,10 @@
         _       (assert version)
         handle  (impl/thing->handle config :else version)]
     (if (.isDirectory handle)
-      (-> (for [d     (sort-by #(.getName %) (.listFiles handle))
-                :when (.isDirectory d)]
-            (t/->Platform version (.getName d)))
-          succeed)
+      (succeed
+       (for [d     (sort-by #(.getName %) (.listFiles handle))
+             :when (.isDirectory d)]
+         (t/->Platform version (.getName d))))
       (fail (str "No such version "
                  (t/thing->path thing))))))
 
@@ -73,10 +75,10 @@
         _        (assert platform)
         handle   (impl/thing->handle config :else platform)]
     (if (.isDirectory handle)
-      (-> (for [d     (.listFiles handle)
-                :when (.isDirectory d)]
-            (t/->Ns platform (.getName d)))
-          succeed)
+      (succeed
+       (for [d     (.listFiles handle)
+             :when (.isDirectory d)]
+         (t/->Ns platform (.getName d))))
       (fail (str "No such platform "
                  (t/thing->path thing))))))
 
@@ -87,10 +89,10 @@
         _         (assert namespace)
         handle    (impl/thing->handle config :else namespace)]
     (if (.isDirectory handle)
-      (-> (for [d     (.listFiles handle)
-                :when (.isDirectory d)]
-            (t/->Def namespace (.getName d)))
-          succeed)
+      (succeed
+       (for [d     (.listFiles handle)
+             :when (.isDirectory d)]
+         (t/->Def namespace (.getName d))))
       (fail (str "No such namespace "
                  (t/thing->path thing))))))
 
@@ -99,13 +101,13 @@
   (if-not (t/versioned? thing)
     (let [versions (api/thing->prior-versions config thing)]
       (if (succeed? versions)
-        (-> (for [thing (result versions)
-                  :let  [v (t/thing->name (t/thing->version thing))
-                         h (impl/thing->notes-handle config thing)]
-                  :when (.exists h)
-                  :when (.isFile h)]
-              (t/->Note thing, (.getPath h)))
-            succeed)
+        (succeed
+         (for [thing (result versions)
+               :let  [v (t/thing->name (t/thing->version thing))
+                      h (impl/thing->notes-handle config thing)]
+               :when (.exists h)
+               :when (.isFile h)]
+           (t/->Note thing, (.getPath h))))
 
         ;; versions is a Fail, pass it down
         versions))
@@ -119,13 +121,13 @@
   {:pre [(t/thing? thing)]}
   (let [versions (api/thing->prior-versions config thing)]
     (if (succeed? versions)
-      (-> (for [prior-thing (result versions)
-                :let        [v (t/thing->name (t/thing->version prior-thing))
-                             h (impl/thing->handle config :examples prior-thing)]
-                ex          (.listFiles h)
-                :when       (.isFile ex)]
-            (t/->Example thing, (.getPath ex)))
-          succeed)
+      (succeed
+       (for [prior-thing (result versions)
+             :let        [v (t/thing->name (t/thing->version prior-thing))
+                          h (impl/thing->handle config :examples prior-thing)]
+             ex          (.listFiles h)
+             :when       (.isFile ex)]
+         (t/->Example thing, (.getPath ex))))
 
       ;; versions is a Fail, pass it down
       versions)))
@@ -134,6 +136,7 @@
 ;;--------------------
 
 (defmethod api/-read-note ::fs/Config [config thing]
+  {:pre [(t/note? thing)]}
   (let [handle (impl/thing->notes-handle config (t/thing->parent thing))]
     (if (.exists handle) ;; guard against missing files
       (-> handle slurp succeed)
@@ -169,17 +172,17 @@
         current-version (t/thing->version thing)
         versions        (api/thing->prior-versions config thing)]
     (if (succeed? versions)
-      (-> (for [thing (result versions)
-                :let  [v (t/thing->name (t/thing->version thing))
-                       h (impl/thing->related-handle config thing)]
-                :when (.exists h)
-                :when (.isFile h)
-                line  (line-seq (io/reader h))
-                :let  [sym (read-string line)]]
-            (-> current-version
-                (t/->Ns  (namespace sym))
-                (t/->Def (name sym))))
-          succeed)
+      (succeed
+       (for [thing (result versions)
+             :let  [v (t/thing->name (t/thing->version thing))
+                    h (impl/thing->related-handle config thing)]
+             :when (.exists h)
+             :when (.isFile h)
+             line  (line-seq (io/reader h))
+             :let  [sym (read-string line)]]
+         (-> current-version
+             (t/->Ns  (namespace sym))
+             (t/->Def (name sym)))))
 
       ;; versions is a Fail, pass it down
       versions)))
