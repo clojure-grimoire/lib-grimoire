@@ -15,7 +15,6 @@
             [detritus.variants :as v]
             [version-clj.core :as semver]))
 
-;; FIXME: a config TaggedValue would be nice.
 (defn dispatch [config & more]
   (v/tag config))
 
