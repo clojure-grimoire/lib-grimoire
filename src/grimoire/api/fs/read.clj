@@ -140,7 +140,13 @@
       (fail (str "No note for object "
                  (t/thing->path (t/thing->parent thing)))))))
 
-;; FIXME: read-example
+(defmethod api/-read-example ::fs/Config [config thing]
+  {:pre [(t/example? thing)]}
+  (let [handle (io/file (:handle thing))]
+    (if (.exists handle) ;; guard against missing files
+      (-> handle slurp succeed)
+      (fail (str "No such example! "
+                 (:handle thing))))))
 
 (defmethod api/-read-meta ::fs/Config [config thing]
   (let [thing  (t/ensure-thing thing)
