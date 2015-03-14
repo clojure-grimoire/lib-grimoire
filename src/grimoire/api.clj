@@ -265,15 +265,15 @@
                      util/normalize-version)
         unv-path (t/thing->relative-path t/version thing)
         versions (e/result (list-versions config (:parent currentv)))]
-    (-> (for [v     versions
-              :when (<= 0 (semver/version-compare (:name v) added))
-              :when (>= 0 (semver/version-compare (:name v) current))]
-          ;; FIXME: this could be a direct constructor given an
-          ;; appropriate vehicle for doing so since the type is directed
-          ;; and single but may not generally make sense if this is not
-          ;; the case.
-          (t/path->thing (str (t/thing->path v) "/" unv-path)))
-        e/succeed)))
+    (e/succeed
+     (for [v     versions
+           :when (<= 0 (semver/version-compare (:name v) added))
+           :when (>= 0 (semver/version-compare (:name v) current))]
+       ;; FIXME: this could be a direct constructor given an
+       ;; appropriate vehicle for doing so since the type is directed
+       ;; and single but may not generally make sense if this is not
+       ;; the case.
+       (t/path->thing (str (t/thing->path v) "/" unv-path))))))
 
 (defn read-notes
   "Succeeds with a result Seq[Version, string], being the zip of list-notes with
