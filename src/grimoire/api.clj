@@ -255,7 +255,8 @@
   Fails if a nested Failure is encountered."
 
   [config thing]
-  {:pre [(t/versioned? thing)]}
+  {:pre [(t/versioned? thing)
+         (not (:handle thing))]}
   (let [thing    (t/ensure-thing thing)
         currentv (t/thing->version thing)               ; version handle
         current  (-> currentv :name util/normalize-version)
