@@ -126,8 +126,8 @@ A back end _may_ choose to extend these nodes to arbitrary parents.
 
 ## Back ends
 
-- [FS Back end](#fs%-back-end)
-- [Grimoire Back end](#grimoire-back-end)
+- [FS back end](#fs%-back-end)
+- [Grimoire back end](#grimoire-back-end)
 
 ### FS back end
 
