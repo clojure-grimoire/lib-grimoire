@@ -98,7 +98,7 @@
 
 (defmethod api/-list-notes ::fs/Config [config thing]
   {:pre [(t/thing? thing)]}
-  (if-not (t/versioned? thing)
+  (if (t/versioned? thing)
     (let [versions (api/thing->prior-versions config thing)]
       (if (succeed? versions)
         (succeed
