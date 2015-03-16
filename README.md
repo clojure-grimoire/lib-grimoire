@@ -115,6 +115,8 @@ Rate limiting may be applied to this API on the server side in future in the for
 - Refactor `grimoire.api.fs.*` to extend the renamed multimethods.
 - Refactor `grimoire.api.web.*` to make use of `grimoire.api.web/->Config` (a Detritus tagged val) as it's configuration ctor and dispatch value.
 - Refactor `grimoire.api.web.*` to extend the renamed multimethods.
+- Refactor the various `grimoire.things/thing->T` parent traversals to provide assertion coverage guarding against nil results.
+- Refactor the various `grimoire.things/T?` predicates to reflect the updated type graph structure.
 
 **0.7.X**:
 - The `:parent` of a `Namespace` is now a `Platform` not a `Version` as it was previously.
