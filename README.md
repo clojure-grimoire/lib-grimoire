@@ -42,9 +42,9 @@ The various back end listing operations in `grimoire.api` [docs](http://conj.io/
 #### Ex. 0
 
 ```Clojure
-user=> (require '[grimoire.things :as t])
+user> (require '[grimoire.things :as t])
 nil
-user=> (-> (t/->Group "org.clojure")
+user> (-> (t/->Group "org.clojure")
            (t/->Artifact "clojure"))
 (:grimoire.things/artifact
  {:parent (:grimoire.things/group
@@ -52,7 +52,7 @@ user=> (-> (t/->Group "org.clojure")
             :grimoire.things/url "org.clojure"}),
   :name "clojure",
   :grimoire.things/url "org.clojure/clojure"})
-user=> (map t/thing->name (result (api/list-versions config *1)))
+user> (map t/thing->name (result (api/list-versions config *1)))
 ("1.7.0-alpha4" "1.7.0-alpha3" "1.7.0-alpha2" "1.7.0-alpha1" "1.6.0" "1.5.0" "1.4.0") 
 ```
 
@@ -61,7 +61,7 @@ Nodes in this graph may be arbitrarily reconstructed from URI strings via `grimo
 #### Ex. 1
 
 ```Clojure
-user=> (t/path->thing "org.clojure-grimoire/lib-grimoire/0.8.2")
+user> (t/path->thing "org.clojure-grimoire/lib-grimoire/0.8.2")
 (:grimoire.things/version
  {:parent
   (:grimoire.things/artifact
@@ -81,7 +81,7 @@ Using the same REPL from last time,
 #### Ex. 2
 
 ```Clojure
-user=> (t/thing->parent *1)
+user> (t/thing->parent *1)
 (:grimoire.things/artifact
  {:parent
   (:grimoire.things/group {:name "org.clojure-grimoire", :grimoire.things/url "org.clojure-grimoire"}),
@@ -98,7 +98,7 @@ This contract is stated in the `grimoire.api` [docs](http://conj.io/store/org.cl
 #### Ex. 3
 
 ```Clojure
-user=> (keys
+user> (keys
          (result
 		   (api/read-meta
 		     (lib-grim-config)
@@ -195,9 +195,9 @@ This back end uses a configuration map as such:
 #### Ex. 5
 
 ```Clojure
-=> (require '[grimoire.api.web :refer [->Config]])
+user> (require '[grimoire.api.web :refer [->Config]])
 nil
-=> (->Config "http://127.0.0.1:3000")
+user> (->Config "http://127.0.0.1:3000")
 (:grimoire.api.fs/Config
  {:host "http://127.0.0.1:3000"})
 ```
@@ -206,6 +206,25 @@ nil
 Note that host string must include a protocol specifier, and must not end with `"/"`.
 
 Rate limiting may be applied to this API on the server side in future in the form of `fail`ing requests.
+
+So if you wanted to use the live Grimoire site as a data source for instance:
+
+#### Ex. 5
+
+```Clojure
+user> (->Config "http://conj.io")
+(:grimoire.api.fs/Config
+ {:host "http://conj.io"})
+user> (api/list-groups (lib-grim-config))
+(:grimoire.either/Succeess
+ {:result
+  ((:grimoire.things/group
+    {:name "org.clojure",
+     :grimoire.things/url "org.clojure"})
+   (:grimoire.things/group
+    {:name "org.clojure-grimoire",
+     :grimoire.things/url "org.clojure-grimoire"}))})
+```
 
 ## Changelog
 
