@@ -209,7 +209,7 @@ Rate limiting may be applied to this API on the server side in future in the for
 
 So if you wanted to use the live Grimoire site as a data source for instance:
 
-#### Ex. 5
+#### Ex. 6
 
 ```Clojure
 user> (->Config "http://conj.io")
