@@ -1,4 +1,3 @@
-[![Latest release](http://img.shields.io/github/tag/clojure-grimoire/lib-grimoire.svg)](https://clojars.org/org.clojure-grimoire/lib-grimoire)
 [![Gittip button](http://img.shields.io/gittip/arrdem.svg)](https://www.gittip.com/arrdem/ "Support this project")
 
 # Lib-Grimoire
