@@ -215,7 +215,7 @@ So if you wanted to use the live Grimoire site as a data source for instance:
 user> (->Config "http://conj.io")
 (:grimoire.api.fs/Config
  {:host "http://conj.io"})
-user> (api/list-groups (lib-grim-config))
+user> (api/list-groups *1)
 (:grimoire.either/Succeess
  {:result
   ((:grimoire.things/group
