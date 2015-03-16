@@ -33,12 +33,12 @@ user=> (require '[grimoire.things :as t])
 nil
 user=> (-> (t/->Group "org.clojure")
            (t/->Artifact "clojure"))
-;=> (:grimoire.things/artifact
-;    {:parent (:grimoire.things/group
-;              {:name "org.clojure",
-;               :grimoire.things/url "org.clojure"}),
-;     :name "clojure",
-;     :grimoire.things/url "org.clojure/clojure"})
+(:grimoire.things/artifact
+ {:parent (:grimoire.things/group
+           {:name "org.clojure",
+            :grimoire.things/url "org.clojure"}),
+  :name "clojure",
+  :grimoire.things/url "org.clojure/clojure"})
 ```
 
 The `grimoire.things/thing->parent` provides upwards traversal by walking to the parent node.
@@ -57,6 +57,8 @@ The same goes for `Example`s.
 All `Thing`s, including `Note`s and `Example`s are _not_ expected to be accessed by direct construction.
 In fact it is an abstraction violation to do so.
 The expected access pattern is that the `grimoire.api/list-<t>` methods will be used to implement a more-or-less Unix like access pattern of sequential listing and tree traversal.
+An example of this pattern is provided for the fs backend.
+
 Searching is at present expected to be implemented on a per-datastore basis as what search techniques provide efficient access will vary on a per-datastore basis.
 
 As of now, two back ends are provided, a filesystem back end and a web back end.
@@ -76,6 +78,40 @@ nil
  {:docs     "resources/test/docs/",
   :notes    "resources/test/notes/",
   :examples "resources/test/examples/"})
+```
+
+In the context of a configured Grimoire instance, the following would work:
+
+```Clojure
+grimoire.web.views> (lib-grim-config)
+(:grimoire.api.fs/Config {:docs "doc-store", :examples "notes-store", :notes "notes-store"})
+grimoire.web.views> (result (api/list-groups (lib-grim-config)))
+((:grimoire.things/group {:name "org.clojure", :grimoire.things/url "org.clojure"})
+ (:grimoire.things/group {:name "org.clojure-grimoire", :grimoire.things/url "org.clojure-grimoire"}))
+grimoire.web.views> (result (api/list-artifacts (lib-grim-config) (second *1)))
+((:grimoire.things/artifact
+  {:parent
+   (:grimoire.things/group {:name "org.clojure-grimoire", :grimoire.things/url "org.clojure-grimoire"}),
+   :name "lib-grimoire",
+   :grimoire.things/url "org.clojure-grimoire/lib-grimoire"}))
+grimoire.web.views> (result (api/list-versions (lib-grim-config) (first *1)))
+((:grimoire.things/version
+  {:parent
+   (:grimoire.things/artifact
+    {:parent
+     (:grimoire.things/group {:name "org.clojure-grimoire", :grimoire.things/url "org.clojure-grimoire"}),
+     :name "lib-grimoire",
+     :grimoire.things/url "org.clojure-grimoire/lib-grimoire"}),
+     :name "0.6.4",
+     :grimoire.things/url "org.clojure-grimoire/lib-grimoire/0.6.4"})
+ (:grimoire.things/version
+  {:parent
+   (:grimoire.things/artifact
+    {:parent (:grimoire.things/group {:name "org.clojure-grimoire", :grimoire.things/url "org.clojure-grimoire"}),
+      :name "lib-grimoire",
+      :grimoire.things/url "org.clojure-grimoire/lib-grimoire"}),
+   :name "0.6.3",
+   :grimoire.things/url "org.clojure-grimoire/lib-grimoire/0.6.3"}))
 ```
 
 ### Grimoire backend
