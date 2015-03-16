@@ -1,25 +1,19 @@
-[![Latest release](http://img.shields.io/github/tag/clojure-grimoire/lib-grimoire.svg)](https://clojars.org/org.clojure-grimoire/lib-grimoire)
 [![Gittip button](http://img.shields.io/gittip/arrdem.svg)](https://www.gittip.com/arrdem/ "Support this project")
 
 # Lib-Grimoire
 
-A small library for sharing code between
-[grimoire](https://github.com/clojure-grimoire/grimoire) and
-[lein-grim](https://github.com/clojure-grimoire/lein-grim) as well as
-other project interested in interacting with the Grimoire
-datastore. lib-grimoire privides a shared abstraction of a Clojure
-Maven entity and a set of operations on various backends for reading
-and writing data using these entities.
+A small library for sharing code between [grimoire](https://github.com/clojure-grimoire/grimoire) and [lein-grim](https://github.com/clojure-grimoire/lein-grim) as well as other project interested in interacting with the Grimoire datastore or simply storing and retrieving Clojure source metadata.
+lib-grimoire privides a shared abstraction of a Clojure Maven entity and a set of operations on various backends for reading and writing data using these entities.
 
 ## Usage
 
 [![Clojars Project](http://clojars.org/org.clojure-grimoire/lib-grimoire/latest-version.svg)](http://clojars.org/org.clojure-grimoire/lib-grimoire)
 
-Things are a structure used for uniquely naming versioned, vendored,
-platformed definitons and all parent structures thereof. Defined in
-`grimoire.things`
-[docs](http://conj.io/store/org.clojure-grimoire/lib-grimoire/latest/grimoire.things)
-as follows:
+Note that lib-grimoire is still pre-1.0.0, and as such is still in development and may undergo breaking changes.
+Please refer to the [Changelog](#Changelog) section.
+
+Things are a structure used for uniquely naming versioned, vendored, platformed definitons and all parent structures thereof.
+Defined in `grimoire.things` [docs](http://conj.io/store/org.clojure-grimoire/lib-grimoire/latest/grimoire.things) as follows:
 
 ```
 Thing     ::= Sum[Group, Artifact, Version, Platform, Namespace, Def];
@@ -31,32 +25,48 @@ Namespace ::= Record[Parent: Platform,  Name: String];
 Def       ::= Record[Parent: Namespace, Name: String];
 ```
 
-**CHANGELOG 0.7.X**: the `:parent` of a `Namespace` is now a
-  `Platform` not a `Version` as it was previously.
+Note that these "Things" form a singly directed child to parent graph.
+The various type constructors in `grimoire.things` provide downwards traversal by constructing children from parents.
 
-The Grimoire API (`grimoire.api`
-[docs](http://conj.io/store/org.clojure-grimoire/lib-grimoire/latest/grimoire.api))
-is simply a collection of multimethods, predominantly of the argument
-structure `[configuration, target-thing]`. Several implementations of
-these multimethods are provided, however they are not loaded by
-default. API clients are responsible for loading what portions of the
-API they wish to use.
+```Clojure
+user=> (require '[grimoire.things :as t])
+nil
+user=> (-> (t/->Group "org.clojure")
+           (t/->Artifact "clojure"))
+(:grimoire.things/artifact
+ {:parent (:grimoire.things/group
+           {:name "org.clojure",
+            :grimoire.things/url "org.clojure"}),
+  :name "clojure",
+  :grimoire.things/url "org.clojure/clojure"})
+```
 
-The entire API is written in terms of `Maybe`
-[hackage](http://hackage.haskell.org/package/base-4.7.0.2/docs/Data-Maybe.html),
-encoded using `grimoire.util/succeed`, `grimoire.util/fail`,
-`grimoire.util/succeed?` and `grimoire.util/result`. Exceptions should
-be handled, please report encountered exceptions as bugs.
+The `grimoire.things/thing->parent` provides upwards traversal by walking to the parent node.
+
+In addition to these Things, two more exist as of 0.8,
+
+```
+Note    ::= Record[Parent: Thing, Handle: String];
+Example ::= Record[Parent: Thing, Handle: String];
+```
+
+`Note` things encode datastore dependent handles (the meaning of which is not guaranteed at all).
+`Note`s may be used to read a note, or write another `Note` text to the same "location".
+The same goes for `Example`s.
+
+All `Thing`s, including `Note`s and `Example`s are _not_ expected to be accessed by direct construction.
+In fact it is an abstraction violation to do so.
+The expected access pattern is that the `grimoire.api/list-<t>` methods will be used to implement a more-or-less Unix like access pattern of sequential listing and tree traversal.
+An example of this pattern is provided for the fs backend.
+
+Searching is at present expected to be implemented on a per-datastore basis as what search techniques provide efficient access will vary on a per-datastore basis.
+
+As of now, two back ends are provided, a filesystem back end and a web back end.
 
 ### FS backend
 
-This is backend (`grimoire.api.fs.read`
-[docs](http://conj.io/store/org.clojure-grimoire/lib-grimoire/latest/grimoire.api.fs.read),
-`grimoire.api.fs.write`
-[docs](http://conj.io/store/org.clojure-grimoire/lib-grimoire/latest/grimoire.api.fs.write))
-implements reading and writing on a filesystem datastore as used in
-Grimoire 0.4 and generated by lib-grimoire. Load the reader and writer
-as desired and then use the API exposed in `grimoire.api` as needed.
+This is backend (`grimoire.api.fs.read` [docs](http://conj.io/store/org.clojure-grimoire/lib-grimoire/latest/grimoire.api.fs.read), `grimoire.api.fs.write` [docs](http://conj.io/store/org.clojure-grimoire/lib-grimoire/latest/grimoire.api.fs.write)) implements reading and writing on a filesystem datastore as used in Grimoire 0.4 and generated by lib-grimoire.
+Load the reader and writer as desired and then use the API exposed in `grimoire.api` as needed.
 
 This backend uses a configuration value as such:
 
@@ -70,18 +80,45 @@ nil
   :examples "resources/test/examples/"})
 ```
 
+In the context of a configured Grimoire instance, the following would work:
+
+```Clojure
+grimoire.web.views> (lib-grim-config)
+(:grimoire.api.fs/Config {:docs "doc-store", :examples "notes-store", :notes "notes-store"})
+grimoire.web.views> (result (api/list-groups (lib-grim-config)))
+((:grimoire.things/group {:name "org.clojure", :grimoire.things/url "org.clojure"})
+ (:grimoire.things/group {:name "org.clojure-grimoire", :grimoire.things/url "org.clojure-grimoire"}))
+grimoire.web.views> (result (api/list-artifacts (lib-grim-config) (second *1)))
+((:grimoire.things/artifact
+  {:parent
+   (:grimoire.things/group {:name "org.clojure-grimoire", :grimoire.things/url "org.clojure-grimoire"}),
+   :name "lib-grimoire",
+   :grimoire.things/url "org.clojure-grimoire/lib-grimoire"}))
+grimoire.web.views> (result (api/list-versions (lib-grim-config) (first *1)))
+((:grimoire.things/version
+  {:parent
+   (:grimoire.things/artifact
+    {:parent
+     (:grimoire.things/group {:name "org.clojure-grimoire", :grimoire.things/url "org.clojure-grimoire"}),
+     :name "lib-grimoire",
+     :grimoire.things/url "org.clojure-grimoire/lib-grimoire"}),
+     :name "0.6.4",
+     :grimoire.things/url "org.clojure-grimoire/lib-grimoire/0.6.4"})
+ (:grimoire.things/version
+  {:parent
+   (:grimoire.things/artifact
+    {:parent (:grimoire.things/group {:name "org.clojure-grimoire", :grimoire.things/url "org.clojure-grimoire"}),
+      :name "lib-grimoire",
+      :grimoire.things/url "org.clojure-grimoire/lib-grimoire"}),
+   :name "0.6.3",
+   :grimoire.things/url "org.clojure-grimoire/lib-grimoire/0.6.3"}))
+```
+
 ### Grimoire backend
 
-The [http API](http://conj.io/api) exposed by Grimoire is backed by an
-instance of lib-grimoire on the server side, so it only mades sense
-for me to dogfood the Grimoire datastore out over the same interface
-used internally. The Grimoire backend (`grimoire.api.web.read`
-[docs](http://conj.io/store/org.clojure-grimoire/lib-grimoire/latest/grimoire.api.web.read))
-provides full, read only access to the datastore behind Grimoire using
-EDN as the data interchange format and `clojure.edn/read-string` for
-the reader. Lib-grimore does _not_ use a HTTP request client to
-implement this feature, instead relying only on `clojure.core/slurp`
-in the name of being lightweight.
+The [http API](http://conj.io/api) exposed by Grimoire is backed by an instance of lib-grimoire on the server side, so it only mades sense for me to dogfood the Grimoire datastore out over the same interface used internally.
+The Grimoire backend (`grimoire.api.web.read` [docs](http://conj.io/store/org.clojure-grimoire/lib-grimoire/latest/grimoire.api.web.read)) provides full, read only access to the datastore behind Grimoire using EDN as the data interchange format and `clojure.edn/read-string` for the reader.
+Lib-grimore does _not_ use a HTTP request client to implement this feature, instead relying only on `clojure.core/slurp` in the name of being lightweight.
 
 This backend uses a configuration map as such:
 
@@ -93,22 +130,43 @@ nil
  {:host "http://127.0.0.1:3000"})
 ```
 
-`:host` is expected to be the Grimoire base URL, but is variable and
-can be pointed anywhere. Note that host string must include a protocol
-specifier, and must not end with `"/"`.
+`:host` is expected to be the Grimoire base URL, but is variable and can be pointed anywhere.
+Note that host string must include a protocol specifier, and must not end with `"/"`.
 
-Rate limiting may be applied to this API on the server side in future
-in the form of `fail`ing requests.
+Rate limiting may be applied to this API on the server side in future in the form of `fail`ing requests.
+
+## Changelog
+
+**0.8.\***:
+- Things are now encoded using Detritus' tagged values system.
+- `Examples` have been added to the Things structure.
+- `Notes` have been added to the Things structure.
+- `grimoire.api/list-examples` added.
+- `grimoire.api/list-notes` added.
+- `grimoire.api/read-example` added.
+- `grimoire.api/read-note` added.
+- `grimoire.api/read-notes` reimplemented as the compose of `list-notes` and `read-note`.
+- Refactor `grimoire.api` so that the intentional API consists of fns with the same names as the previous multimethod API guarding renamed multimethods with contract preconditions.
+- Refactor `grimoire.api.fs.*` to make use of `grimoire.api.fs/->Config` (a Detritus tagged val) as it's configuration ctor and dispatch value.
+- Refactor `grimoire.api.fs.*` to extend the renamed multimethods.
+- Refactor `grimoire.api.web.*` to make use of `grimoire.api.web/->Config` (a Detritus tagged val) as it's configuration ctor and dispatch value.
+- Refactor `grimoire.api.web.*` to extend the renamed multimethods.
+- Refactor the various `grimoire.things/thing->T` parent traversals to provide assertion coverage guarding against nil results.
+- Refactor the various `grimoire.things/T?` predicates to reflect the updated type graph structure.
+
+**0.7.\***:
+- The `:parent` of a `Namespace` is now a `Platform` not a `Version` as it was previously.
+  This change allows for the Thing structure to losslessly encode namespaces and defs across both Clojure and ClojureScript.
+  Note that [support is provided](/src/grimoire/util.clj:48) for Clojure, ClojureScript, Pixie, Oxlang and Toccata and that this set may be extended without breaking changes.
 
 ## Hacking
 
-Note that the tests assume an instance of Grimoire 0.4 or later
-running on 127.0.0.1:3000. Patches, PRs and issues welcome. No CA
-required.
+Note that the tests assume an instance of Grimoire 0.4 or later running on 127.0.0.1:3000.
+Patches, PRs and issues welcome.
+No CA required.
 
 ## License
 
 Copyright © 2014-Present Reid "arrdem" McKenzie
 
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Distributed under the Eclipse Public License either version 1.0 or (at your option) any later version.
