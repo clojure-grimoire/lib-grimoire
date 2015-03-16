@@ -137,7 +137,7 @@ Rate limiting may be applied to this API on the server side in future in the for
 
 ## Changelog
 
-**0.8.0**:
+**0.8.\***:
 - Things are now encoded using Detritus' tagged values system.
 - `Examples` have been added to the Things structure.
 - `Notes` have been added to the Things structure.
@@ -154,7 +154,7 @@ Rate limiting may be applied to this API on the server side in future in the for
 - Refactor the various `grimoire.things/thing->T` parent traversals to provide assertion coverage guarding against nil results.
 - Refactor the various `grimoire.things/T?` predicates to reflect the updated type graph structure.
 
-**0.7.X**:
+**0.7.\***:
 - The `:parent` of a `Namespace` is now a `Platform` not a `Version` as it was previously.
   This change allows for the Thing structure to losslessly encode namespaces and defs across both Clojure and ClojureScript.
   Note that [support is provided](/src/grimoire/util.clj:48) for Clojure, ClojureScript, Pixie, Oxlang and Toccata and that this set may be extended without breaking changes.
