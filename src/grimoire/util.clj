@@ -6,9 +6,9 @@
             [cemerick.url :refer [url-encode]]))
 
 (defn munge
-  "This is the munge function as used by the current version of Grimoire. Munges
-  the characters #\"[.?/]\" and nothing more. Should only be applied to
-  symbols. Namespaces, packages, groups and soforth need not be name munged."
+  "This is the munge function as used by the current version of
+  Grimoire. Should only be applied to symbols. Namespaces, packages,
+  groups and soforth need not be name munged."
   [s]
   (-> s
       (url-encode)
