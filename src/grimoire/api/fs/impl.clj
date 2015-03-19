@@ -6,8 +6,7 @@
             [grimoire.things :as t]
             [grimoire.api.fs :refer [Config?]]
             [detritus.variants :as v]
-            [clojure.java.io :as io]
-            [cemerick.url :as url]))
+            [clojure.java.io :as io]))
 
 (defn file?
   [h]
@@ -47,7 +46,7 @@
                  (:notes)    "/notes.md"
                  nil)
         n      (if (= ::t/def (v/tag thing))
-                 (url/url-encode (t/thing->name thing))
+                 (util/munge (t/thing->name thing))
                  (t/thing->name thing))
         h      (io/file p (str n e))]
     h))
