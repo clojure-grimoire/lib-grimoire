@@ -10,7 +10,10 @@
   the characters #\"[.?/]\" and nothing more. Should only be applied to
   symbols. Namespaces, packages, groups and soforth need not be name munged."
   [s]
-  (url-encode s))
+  (-> s
+      (url-encode)
+      (str/replace #"\." "%2E") ;; most applications don't eat the . character happily
+      ))
 
 (defn update-munge
   "This function attempts to transform the legacy (Grimoire 0.2.X, 0.1.X)
