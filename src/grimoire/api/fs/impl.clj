@@ -6,7 +6,8 @@
             [grimoire.things :as t]
             [grimoire.api.fs :refer [Config?]]
             [detritus.variants :as v]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [cemerick.url :as url]))
 
 (defn file?
   [h]
@@ -31,13 +32,14 @@
           (Config? cfg)]
    :post [(file? %)]}
   (let [d      (get cfg ({:meta     :docs
-                          :else     :docs
+                          :else     :docs     ;; FIXME: is this really the default case? seems janky.
                           :related  :notes
                           :notes    :notes
                           :examples :examples}
                          which))
         parent (t/thing->parent thing)
         p      (io/file (str d "/" (when parent (t/thing->path parent))))
+        n      (t/thing->name thing)
         e      (case which
                  (:meta)     "/meta.edn"
                  (:related)  "/related.txt"
@@ -45,7 +47,7 @@
                  (:notes)    "/notes.md"
                  nil)
         n      (if (= ::t/def (v/tag thing))
-                 (util/munge (t/thing->name thing))
+                 (url/url-encode (t/thing->name thing))
                  (t/thing->name thing))
         h      (io/file p (str n e))]
     h))

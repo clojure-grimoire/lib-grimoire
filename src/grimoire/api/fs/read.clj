@@ -11,7 +11,11 @@
             [clojure.string :as string]
             [clojure.edn :as edn]
             [detritus.variants :as v]
-            [version-clj.core :as semver]))
+            [version-clj.core :as semver]
+            [cemerick.url :as url]))
+
+(defn- f->name [^java.io.File f]
+  (url/url-decode (.getName f)))
 
 ;; List things
 ;;--------------------
@@ -21,7 +25,7 @@
       (succeed
        (for [d     (.listFiles handle)
              :when (.isDirectory d)]
-         (t/->Group (.getName d))))
+         (t/->Group (url/url-decode (f->name d)))))
       (fail "Could not find store directory"))))
 
 (defmethod api/-list-artifacts ::fs/Config [config thing]
@@ -33,7 +37,7 @@
       (succeed
        (for [d     (.listFiles handle)
              :when (.isDirectory d)]
-         (t/->Artifact thing (.getName d))))
+         (t/->Artifact thing (f->name d))))
       (->> thing
            t/thing->path
            (str "No such group ")
@@ -47,7 +51,7 @@
     (if (.isDirectory handle)
       (->> (for [d     (reverse (sort (.listFiles handle)))
                  :when (.isDirectory d)]
-             (t/->Version artifact (.getName d)))
+             (t/->Version artifact (f->name d)))
            (sort-by t/thing->name)
            reverse
            succeed)
@@ -62,9 +66,9 @@
         handle  (impl/thing->handle config :else version)]
     (if (.isDirectory handle)
       (succeed
-       (for [d     (sort-by #(.getName %) (.listFiles handle))
+       (for [d     (sort-by #(f->name %) (.listFiles handle))
              :when (.isDirectory d)]
-         (t/->Platform version (.getName d))))
+         (t/->Platform version (f->name d))))
       (fail (str "No such version "
                  (t/thing->path thing))))))
 
@@ -78,7 +82,7 @@
       (succeed
        (for [d     (.listFiles handle)
              :when (.isDirectory d)]
-         (t/->Ns platform (.getName d))))
+         (t/->Ns platform (f->name d))))
       (fail (str "No such platform "
                  (t/thing->path thing))))))
 
@@ -92,7 +96,7 @@
       (succeed
        (for [d     (.listFiles handle)
              :when (.isDirectory d)]
-         (t/->Def namespace (.getName d))))
+         (t/->Def namespace (f->name d))))
       (fail (str "No such namespace "
                  (t/thing->path thing))))))
 
@@ -167,6 +171,11 @@
   ;; FIXME: This assumes the old Grimoire 0.3.X related file format,
   ;; being a sequence of fully qualified symbols not Thing URIs. Will
   ;; work, but not optimal in terms of utility going forwards.
+  ;;
+  ;; As there are no datafiles which use this "related" format, it's
+  ;; questionable whether preserving this format is a good idea or
+  ;; not. I'm somewhat inclined to say not, but it's not high
+  ;; priority.
 
   (let [thing           (t/ensure-thing thing)
         current-version (t/thing->version thing)
