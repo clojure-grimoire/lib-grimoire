@@ -357,3 +357,15 @@
   [t]
   {:pre [(thing? t)]}
   (if (def? t) t nil))
+
+;; Bits and bats
+
+(defn thing->url
+  "Function from a Thing to a munged and URL safe Thing path"
+  [t]
+  {:pre [(thing? t)
+         (not (leaf? t))]}
+  (if (def? t)
+    (str (thing->path (thing->parent t))
+         "/" (u/munge (thing->name t)))
+    (thing->path t)))
