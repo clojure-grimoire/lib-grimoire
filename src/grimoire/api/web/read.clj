@@ -25,7 +25,7 @@
 
 ;; Interacting with the datastore - reading
 ;;--------------------------------------------------------------------
-(def baseurl "/api/v1/")
+(def baseurl "/api/v2/")
 
 (defn grim-succeed?
   "λ [t] → Bool
