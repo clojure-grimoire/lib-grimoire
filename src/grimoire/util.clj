@@ -29,8 +29,7 @@
       (str/replace #"_?GT_?"    ">")
       (str/replace #"_?QMARK_?" "?")
       (str/replace #"_?DOT_?"   ".")
-      (str/replace #"_?SLASH_?" "/")
-      url-encode))
+      (str/replace #"_?SLASH_?" "/")))
 
 ;; FIXME: this should really be handled in data generation not in data use
 (defn normalize-version [x]
