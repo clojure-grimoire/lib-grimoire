@@ -71,3 +71,20 @@
     (let [defs (->> ?res result (map t/thing->name) set)]
       (doseq [d ["for" "def" "let" "catch"]]
         (is (defs d))))))
+
+(deftest read-meta-test
+  (let [plat (-> (t/->Group "org.clojure")
+                 (t/->Artifact "clojure")
+                 (t/->Version "1.6.0")
+                 (t/->Platform "clj"))
+        ?nss (api/list-namespaces test-config plat)]
+    (is (succeed? ?nss))
+
+    (doseq [ns (result ?nss)]
+      (is (t/namespace? ns))
+      (is (succeed? (api/read-meta test-config ns)))
+        
+      (let [?defs (api/list-defs test-config ns)]
+        (is (succeed? ?defs))
+        (doseq [d (result ?defs)]
+          (is (succeed? (api/read-meta test-config d))))))))
