@@ -356,7 +356,7 @@
   returns that value. Otherwise returns nil."
   [t]
   {:pre [(thing? t)]}
-  (if (def? t) t nil))
+  (when (def? t) t))
 
 ;; Bits and bats
 
