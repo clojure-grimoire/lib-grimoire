@@ -30,25 +30,19 @@
           (t/thing? thing)
           (Config? cfg)]
    :post [(file? %)]}
-  (let [d      (get cfg ({:meta     :docs
-                          :else     :docs     ;; FIXME: is this really the default case? seems janky.
-                          :related  :notes
-                          :notes    :notes
-                          :examples :examples}
-                         which))
-        parent (t/thing->parent thing)
-        p      (io/file (str d "/" (when parent (t/thing->path parent))))
-        n      (t/thing->name thing)
-        e      (case which
-                 (:meta)     "/meta.edn"
-                 (:related)  "/related.txt"
-                 (:examples) "/examples/"
-                 (:notes)    "/notes.md"
-                 nil)
-        n      (if (= ::t/def (v/tag thing))
-                 (util/munge (t/thing->name thing))
-                 (t/thing->name thing))
-        h      (io/file p (str n e))]
+  (let [d (get cfg ({:meta     :docs
+                     :else     :docs     ;; FIXME: is this really the default case? seems janky.
+                     :related  :notes
+                     :notes    :notes
+                     :examples :examples}
+                    which))
+        e (case which
+            (:meta)     "/meta.edn"
+            (:related)  "/related.txt"
+            (:examples) "/examples/"
+            (:notes)    "/notes.md"
+            nil)
+        h (io/file (str d "/" (t/thing->url thing) e))]
     h))
 
 (defn thing->notes-handle
