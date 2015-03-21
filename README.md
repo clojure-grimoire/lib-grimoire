@@ -136,7 +136,7 @@ Load the reader and writer as desired and then use the API exposed in `grimoire.
 
 This back end uses a configuration value as such:
 
-#### Ex. 3
+#### Ex. 4
 
 ```Clojure
 => (require '[grimoire.api.fs :refer [->Config]])
@@ -150,7 +150,7 @@ nil
 
 In the context of a configured Grimoire instance, the following would work:
 
-#### Ex. 4
+#### Ex. 5
 
 ```Clojure
 grimoire.web.views> (lib-grim-config)
@@ -192,7 +192,7 @@ Lib-grimore does _not_ use a HTTP request client to implement this feature, inst
 
 This back end uses a configuration map as such:
 
-#### Ex. 5
+#### Ex. 6
 
 ```Clojure
 user> (require '[grimoire.api.web :refer [->Config]])
@@ -209,7 +209,7 @@ Rate limiting may be applied to this API on the server side in future in the for
 
 So if you wanted to use the live Grimoire site as a data source for instance:
 
-#### Ex. 6
+#### Ex. 7
 
 ```Clojure
 user> (->Config "http://conj.io")
