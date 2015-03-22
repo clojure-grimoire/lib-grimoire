@@ -238,7 +238,7 @@ user> (api/list-groups *1)
 
 **0.8.\***:
 - Things are now encoded using Detritus' tagged values system.
-[- `Examples` have been added to the Things structure.
+- `Examples` have been added to the Things structure.
 - `Notes` have been added to the Things structure.
 - `grimoire.api/list-examples` added.
 - `grimoire.api/list-notes` added.
