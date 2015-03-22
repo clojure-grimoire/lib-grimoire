@@ -235,7 +235,6 @@ user> (api/list-groups *1)
   Note that the character '.' is encoded to '%2E', not to '.'.
   This is done to ensure that the symbols `clojure.core/.` and `clojure.core/..` map to path meaningful strings.
 
-
 **0.8.\***:
 - Things are now encoded using Detritus' tagged values system.
 - `Examples` have been added to the Things structure.
