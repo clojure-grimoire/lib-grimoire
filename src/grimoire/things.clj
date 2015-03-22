@@ -17,7 +17,8 @@
   (:refer-clojure :exclude [def namespace])
   (:require [clojure.string :as string]
             [grimoire.util :as u]
-            [detritus.variants :as v]))
+            [detritus.variants :as v]
+            [cemerick.url :as url]))
 
 (v/deftag group
   "Represents a Maven group."
@@ -369,3 +370,18 @@
     (str (thing->path (thing->parent t))
          "/" (u/munge (thing->name t)))
     (thing->path t)))
+
+;; FIXME: this function could probably be a little more principled,
+;; but so be it.
+(defn url->thing
+  "Function from a URL to a Thing. Complement of thing->url."
+  [url]
+  (let [path-elems (string/split url #"/")
+        path-elems (if (<= 6 (count path-elems))
+                     (concat
+                      (take 5 path-elems)
+                      [(url/url-decode (nth path-elems 5))]
+                      (drop 6 path-elems))
+                     path-elems)]
+    (println path-elems)
+    (path->thing (string/join "/" path-elems))))
