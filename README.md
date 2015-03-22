@@ -230,13 +230,15 @@ user> (api/list-groups *1)
 
 **0.9.\***:
 - Added `grimoire.things/thing->url` for cases when Things must be URL or path safe.
+- Added `grimoire.things/url->thing` to complement `grimoire.things/thing->url`.
 - **[BREAKING]** Switched to using augmented url encoding for munging in the filesystem, web backends.
   Note that the character '.' is encoded to '%2E', not to '.'.
   This is done to ensure that the symbols `clojure.core/.` and `clojure.core/..` map to path meaningful strings.
 
+
 **0.8.\***:
 - Things are now encoded using Detritus' tagged values system.
-- `Examples` have been added to the Things structure.
+[- `Examples` have been added to the Things structure.
 - `Notes` have been added to the Things structure.
 - `grimoire.api/list-examples` added.
 - `grimoire.api/list-notes` added.
