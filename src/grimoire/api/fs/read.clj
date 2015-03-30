@@ -153,7 +153,7 @@
 
 (defmethod api/-read-note ::fs/Config [config thing]
   {:pre [(t/note? thing)]}
-  (let [handle (impl/thing->notes-handle config (t/thing->parent thing))]
+  (let [handle (io/file (t/thing->path thing))]
     (if (.exists handle) ;; guard against missing files
       (-> handle slurp succeed)
       (fail (str "No note for object "
