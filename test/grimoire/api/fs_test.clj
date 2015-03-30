@@ -22,8 +22,15 @@
    "org.foo/a/1.0.1/clj/a.core"
    "org.foo/a/1.1.0/clj"
    "org.foo/a/1.1.0/clj/a.core"
+   "org.foo/a/1.1.0/clj/a.core/foo?"
    "org.foo/a/1.1.0/clj/a.core/foo"
-   "org.foo/a/1.1.0/clj/a.core/qux"
+   "org.foo/a/1.1.0/clj/a.core/qux!"
+   "org.foo/a/1.1.0/clj/a.core/qux."
+   "org.foo/a/1.1.0/pixi/a.core/qux."
+   "org.foo/a/1.1.0/cljs/a.core/qux."
+   "org.foo/a/1.1.0/cljclr/a.core/qux."
+   "org.foo/a/1.1.0/ox/a.core/qux."
+   "org.foo/a/1.1.0/toc/a.core/qux."
    "org.foo/a/1.1.0/clj/a.impl.clj"
    "org.foo/a/1.1.0/cljclr"
    "org.foo/a/1.1.0/cljs"
@@ -74,7 +81,7 @@
         platforms (-> test-config
                       (api/list-platforms p)
                       result)]
-    (is (= ["clj" "cljclr" "cljs"]
+    (is (= ["clj" "cljclr" "cljs" "ox" "pixi" "toc"]
            (sort (map t/thing->name platforms))))))
 
 (deftest list-ns-test
@@ -113,7 +120,7 @@
         defs (-> test-config
                  (api/list-defs ns)
                  result)]
-    (is (= ["foo" "qux"]
+    (is (= ["foo" "foo?" "qux" "qux!" "qux."]
            (sort (map t/thing->name defs))))))
 
 ;; Reading/Writing tests
