@@ -2,32 +2,34 @@
   "A namespace of stupid little helper bits including tye Grimoire munge
   operations."
   (:refer-clojure :exclude [munge])
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [cemerick.url :refer [url-encode]]))
 
 (defn munge
-  "This is the munge function as used by the current version of Grimoire. Munges
-  the characters #\"[.?/]\" and nothing more. Should only be applied to
-  symbols. Namespaces, packages, groups and soforth need not be name munged."
+  "This is the munge function as used by the current version of
+  Grimoire. Should only be applied to symbols. Namespaces, packages,
+  groups and soforth need not be name munged."
   [s]
   (-> s
-     (str/replace "?" "_QMARK_")
-     (str/replace "." "_DOT_")
-     (str/replace "/" "_SLASH_")
-     (str/replace #"^_*" "")
-     (str/replace #"_*$" "")))
+      (url-encode)
+      (str/replace #"\." "%2E") ;; most applications don't eat the . character happily
+      ))
 
 (defn update-munge
-  "This function attempts to transform the legacy (Grimoire 0.2.X, 0.1.X)
-  munging of strings into the modern munging above. Note that update-munge is
-  _not_ and unmunge operation."
+  "This function attempts to transform the legacy munging of names
+  into the modern munging above. Note that update-munge is _not_ an
+  unmunge operation."
   [s]
   (-> s
-     (str/replace #"_?DASH_?" "-")
-     (str/replace #"_?BANG_?" "!")
-     (str/replace #"_?STAR_?" "*")
-     (str/replace #"_?EQ_?" "=")
-     (str/replace #"_?LT_?" "<")
-     (str/replace #"_?GT_?" ">")))
+      (str/replace #"_?DASH_?"  "-")
+      (str/replace #"_?BANG_?"  "!")
+      (str/replace #"_?STAR_?"  "*")
+      (str/replace #"_?EQ_?"    "=")
+      (str/replace #"_?LT_?"    "<")
+      (str/replace #"_?GT_?"    ">")
+      (str/replace #"_?QMARK_?" "?")
+      (str/replace #"_?DOT_?"   ".")
+      (str/replace #"_?SLASH_?" "/")))
 
 ;; FIXME: this should really be handled in data generation not in data use
 (defn normalize-version [x]

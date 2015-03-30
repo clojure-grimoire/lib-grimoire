@@ -15,7 +15,7 @@
             [version-clj.core :as semver]))
 
 (defn dispatch
-  "Common dispatch function for all the API multimethods"
+  "Common dispatch function for all the API multimethods."
   [config & more]
   (v/tag config))
 

@@ -17,7 +17,8 @@
   (:refer-clojure :exclude [def namespace])
   (:require [clojure.string :as string]
             [grimoire.util :as u]
-            [detritus.variants :as v]))
+            [detritus.variants :as v]
+            [cemerick.url :as url]))
 
 (v/deftag group
   "Represents a Maven group."
@@ -73,22 +74,20 @@
   identified by a Handle. The Handle is intended to be some structure
   such as a file path, record ID, UUID or something else uniquely
   naming a specific note."
-  [parent, handle]
+  [parent, name, handle]
   {:pre [(thing? parent)
+         (string? name)
          (string? handle)]})
-
-(def ->Note "Alias for ->note." ->note)
 
 (v/deftag example
   "Represents a single example on an arbitrary Thing as identified by
   a Handle. The Handle is intended to be some structure such as a file
   path, record ID, UUID or other unique identifier for that singular
   specific example."
-  [parent, handle]
+  [parent, name, handle]
   {:pre [(thing? parent)
+         (string? name)
          (string? handle)]})
-
-(def ->Example "Alias for ->example." ->example)
 
 ;; Helpers for walking thing paths
 
@@ -164,8 +163,7 @@
   "Function from an object to Maybe[String]. If the input is a thing, returns
   the name of the Thing. Otherwise returns nil."
   [t]
-  {:pre [(thing? t)
-         (not (leaf? t))]}
+  {:pre [(thing? t)]}
   (:name t))
 
 ;; Helpers for stringifying and reading paths
@@ -222,6 +220,16 @@
   [namespace name]
   (let [v (->def namespace name)]
     (assoc v ::url (thing->path v))))
+
+(defn ->Example
+  [thing name handle]
+  (let [v (->example thing name handle)]
+    (assoc v ::url handle)))
+
+(defn ->Note
+  [thing name handle]
+  (let [v (->note thing name handle)]
+    (assoc v ::url handle)))
 
 ;; Manipulating things and strings
 
@@ -356,4 +364,29 @@
   returns that value. Otherwise returns nil."
   [t]
   {:pre [(thing? t)]}
-  (if (def? t) t nil))
+  (when (def? t) t))
+
+;; Bits and bats
+
+(defn thing->url-path
+  "Function from a Thing to a munged and URL safe Thing path"
+  [t]
+  {:pre [(thing? t)]}
+  (if (def? t)
+    (str (thing->path (thing->parent t))
+         "/" (u/munge (thing->name t)))
+    (thing->path t)))
+
+;; FIXME: this function could probably be a little more principled,
+;; but so be it.
+(defn url-path->thing
+  "Function from a URL to a Thing. Complement of thing->url-path."
+  [url]
+  (let [path-elems (string/split url #"/")
+        path-elems (if (<= 6 (count path-elems))
+                     (concat
+                      (take 5 path-elems)
+                      [(url/url-decode (nth path-elems 5))]
+                      (drop 6 path-elems))
+                     path-elems)]
+    (path->thing (string/join "/" path-elems))))

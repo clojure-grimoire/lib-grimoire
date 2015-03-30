@@ -11,7 +11,11 @@
             [clojure.string :as string]
             [clojure.edn :as edn]
             [detritus.variants :as v]
-            [version-clj.core :as semver]))
+            [version-clj.core :as semver]
+            [cemerick.url :as url]))
+
+(defn- f->name [^java.io.File f]
+  (url/url-decode (.getName f)))
 
 ;; List things
 ;;--------------------
@@ -21,7 +25,7 @@
       (succeed
        (for [d     (.listFiles handle)
              :when (.isDirectory d)]
-         (t/->Group (.getName d))))
+         (t/->Group (url/url-decode (f->name d)))))
       (fail "Could not find store directory"))))
 
 (defmethod api/-list-artifacts ::fs/Config [config thing]
@@ -33,7 +37,7 @@
       (succeed
        (for [d     (.listFiles handle)
              :when (.isDirectory d)]
-         (t/->Artifact thing (.getName d))))
+         (t/->Artifact thing (f->name d))))
       (->> thing
            t/thing->path
            (str "No such group ")
@@ -47,7 +51,7 @@
     (if (.isDirectory handle)
       (->> (for [d     (reverse (sort (.listFiles handle)))
                  :when (.isDirectory d)]
-             (t/->Version artifact (.getName d)))
+             (t/->Version artifact (f->name d)))
            (sort-by t/thing->name)
            reverse
            succeed)
@@ -62,9 +66,9 @@
         handle  (impl/thing->handle config :else version)]
     (if (.isDirectory handle)
       (succeed
-       (for [d     (sort-by #(.getName %) (.listFiles handle))
+       (for [d     (sort-by #(f->name %) (.listFiles handle))
              :when (.isDirectory d)]
-         (t/->Platform version (.getName d))))
+         (t/->Platform version (f->name d))))
       (fail (str "No such version "
                  (t/thing->path thing))))))
 
@@ -78,7 +82,7 @@
       (succeed
        (for [d     (.listFiles handle)
              :when (.isDirectory d)]
-         (t/->Ns platform (.getName d))))
+         (t/->Ns platform (f->name d))))
       (fail (str "No such platform "
                  (t/thing->path thing))))))
 
@@ -92,34 +96,41 @@
       (succeed
        (for [d     (.listFiles handle)
              :when (.isDirectory d)]
-         (t/->Def namespace (.getName d))))
+         (t/->Def namespace (f->name d))))
       (fail (str "No such namespace "
                  (t/thing->path thing))))))
 
 (defmethod api/-list-notes ::fs/Config [config thing]
   {:pre [(t/thing? thing)]}
   (if (t/versioned? thing)
-    (let [versions (api/thing->prior-versions config thing)]
+    (let [versions (api/thing->prior-versions config thing)
+          lhs      (.toPath (io/file (:notes config)))]
       (if (succeed? versions)
         (succeed
-         (for [thing (result versions)
-               :let  [v (t/thing->name (t/thing->version thing))
-                      h (impl/thing->notes-handle config thing)]
+         (for [prior-thing (result versions)
+               :let  [v (t/thing->name (t/thing->version prior-thing))
+                      h (impl/thing->notes-handle config prior-thing)]
                :when (.exists h)
                :when (.isFile h)]
-           (t/->Note thing, (.getPath h))))
+           (let [rhs (.toPath h)
+                 p   (.relativize lhs rhs)]
+             (-> thing
+                 (t/->Note (.getName h)
+                           (.getPath h))
+                 (assoc ::t/file (.toString p))))))
 
         ;; versions is a Fail, pass it down
         versions))
 
     (let [^java.io.File h (impl/thing->notes-handle config thing)]
       (if (.exists h)
-        (succeed [(t/->Note thing, (.getPath h))])
+        (succeed [(t/->Note thing, (.getName h), (.getPath h))])
         (fail "No notes file!")))))
 
 (defmethod api/-list-examples ::fs/Config [config thing]
   {:pre [(t/thing? thing)]}
-  (let [versions (api/thing->prior-versions config thing)]
+  (let [versions (api/thing->prior-versions config thing)
+        lhs      (.toPath (io/file (:notes config)))]
     (if (succeed? versions)
       (succeed
        (for [prior-thing (result versions)
@@ -127,7 +138,12 @@
                           h (impl/thing->handle config :examples prior-thing)]
              ex          (.listFiles h)
              :when       (.isFile ex)]
-         (t/->Example thing, (.getPath ex))))
+         (let [rhs (.toPath ex)
+               p   (.relativize lhs rhs)]
+           (-> thing
+               (t/->Example (.getName ex)
+                            (.getPath ex))
+               (assoc ::t/file (.toString p))))))
 
       ;; versions is a Fail, pass it down
       versions)))
@@ -137,7 +153,7 @@
 
 (defmethod api/-read-note ::fs/Config [config thing]
   {:pre [(t/note? thing)]}
-  (let [handle (impl/thing->notes-handle config (t/thing->parent thing))]
+  (let [handle (io/file (t/thing->path thing))]
     (if (.exists handle) ;; guard against missing files
       (-> handle slurp succeed)
       (fail (str "No note for object "
@@ -167,6 +183,11 @@
   ;; FIXME: This assumes the old Grimoire 0.3.X related file format,
   ;; being a sequence of fully qualified symbols not Thing URIs. Will
   ;; work, but not optimal in terms of utility going forwards.
+  ;;
+  ;; As there are no datafiles which use this "related" format, it's
+  ;; questionable whether preserving this format is a good idea or
+  ;; not. I'm somewhat inclined to say not, but it's not high
+  ;; priority.
 
   (let [thing           (t/ensure-thing thing)
         current-version (t/thing->version thing)
