@@ -7,14 +7,10 @@
   `list-defs` lists all defs, not just defs of a type.
 
   To use this backend, you will need to load this namespace, and then invoke the
-  API with a configuration map as follows:
-  
-  {:datastore
-   {:mode :web,
-    :host \"http://conj.io\"}
+  API with a configuration as constructed by `grimoire.web/->Config`.
 
   Note that the host need not be conj.io, but must host a Grimoire 0.4 or later
-  instance providing the v0 API. The host string should include a http or https
+  instance providing the v2 API. The host string should include a http or https
   protocol specifier as appropriate and should not end in a /."
   (:require [grimoire.api :as api]
             [grimoire.util :as u]
@@ -25,8 +21,6 @@
 
 ;; Interacting with the datastore - reading
 ;;--------------------------------------------------------------------
-(def baseurl "/api/v2/")
-
 (defn grim-succeed?
   "λ [t] → Bool
 
@@ -41,20 +35,6 @@
   [result]
   (:body result))
 
-(defn make-request
-  "λ [Cfg → Thing → Op] → String
-
-  Forges a Grimoire API V0 request for a given Thing and Op."
-  [config thing op]
-  {:pre [(web/Config? config)
-         (or (t/thing? thing)
-             (nil? thing))
-         (string? op)]}
-  (str (:host config)
-       baseurl
-       (when thing (t/thing->url-path thing))
-       "?op=" op "&type=edn"))
-
 (defn do-data-req
   "λ [Cfg → Thing → Op] → Either[Success[t], Failure[String]]
 
@@ -63,9 +43,8 @@
   unaltered and wrapped in Either."
   [config thing op]
   {:post [(either? %)]}
-  (let [?res (-> (make-request config thing op)
-                 slurp
-                 edn/read-string)]
+  (let [res-string (web/make-api-url config thing op)
+        ?res       (-> res-string slurp edn/read-string)]
     ((if (grim-succeed? ?res)
        succeed fail)
      (grim-result ?res))))
