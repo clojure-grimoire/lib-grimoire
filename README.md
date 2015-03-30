@@ -259,7 +259,7 @@ Note that they are heavily used within Grimoire as of 0.4.12 for exactly this re
 
 **0.9.\***:
 - Added `grimoire.things/thing->url-path` for cases when Things must be URL or path safe.
-- Added `grimoire.things/url-path>thing` to complement `grimoire.things/thing->url-path`.
+- Added `grimoire.things/url-path->thing` to complement `grimoire.things/thing->url-path`.
 - **[BREAKING]** Switched to using augmented url encoding for munging in the filesystem, web backends.
   Note that the character '.' is encoded to '%2E', not to '.'.
   This is done to ensure that the symbols `clojure.core/.` and `clojure.core/..` map to path meaningful strings.
