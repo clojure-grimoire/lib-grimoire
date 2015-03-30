@@ -74,22 +74,20 @@
   identified by a Handle. The Handle is intended to be some structure
   such as a file path, record ID, UUID or something else uniquely
   naming a specific note."
-  [parent, handle]
+  [parent, name, handle]
   {:pre [(thing? parent)
+         (string? name)
          (string? handle)]})
-
-(def ->Note "Alias for ->note." ->note)
 
 (v/deftag example
   "Represents a single example on an arbitrary Thing as identified by
   a Handle. The Handle is intended to be some structure such as a file
   path, record ID, UUID or other unique identifier for that singular
   specific example."
-  [parent, handle]
+  [parent, name, handle]
   {:pre [(thing? parent)
+         (string? name)
          (string? handle)]})
-
-(def ->Example "Alias for ->example." ->example)
 
 ;; Helpers for walking thing paths
 
