@@ -163,8 +163,7 @@
   "Function from an object to Maybe[String]. If the input is a thing, returns
   the name of the Thing. Otherwise returns nil."
   [t]
-  {:pre [(thing? t)
-         (not (leaf? t))]}
+  {:pre [(thing? t)]}
   (:name t))
 
 ;; Helpers for stringifying and reading paths
