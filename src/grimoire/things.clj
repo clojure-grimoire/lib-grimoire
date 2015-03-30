@@ -371,11 +371,10 @@
 
 ;; Bits and bats
 
-(defn thing->url
+(defn thing->url-path
   "Function from a Thing to a munged and URL safe Thing path"
   [t]
-  {:pre [(thing? t)
-         (not (leaf? t))]}
+  {:pre [(thing? t)]}
   (if (def? t)
     (str (thing->path (thing->parent t))
          "/" (u/munge (thing->name t)))
@@ -383,8 +382,8 @@
 
 ;; FIXME: this function could probably be a little more principled,
 ;; but so be it.
-(defn url->thing
-  "Function from a URL to a Thing. Complement of thing->url."
+(defn url-path->thing
+  "Function from a URL to a Thing. Complement of thing->url-path."
   [url]
   (let [path-elems (string/split url #"/")
         path-elems (if (<= 6 (count path-elems))

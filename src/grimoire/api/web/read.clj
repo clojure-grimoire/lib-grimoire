@@ -52,7 +52,7 @@
          (string? op)]}
   (str (:host config)
        baseurl
-       (when thing (t/thing->url thing))
+       (when thing (t/thing->url-path thing))
        "?op=" op "&type=edn"))
 
 (defn do-data-req

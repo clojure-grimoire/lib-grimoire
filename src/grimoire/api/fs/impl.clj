@@ -42,7 +42,7 @@
             (:examples) "/examples/"
             (:notes)    "/notes.md"
             nil)
-        h (io/file (str d "/" (t/thing->url thing) e))]
+        h (io/file (str d "/" (t/thing->url-path thing) e))]
     h))
 
 (defn thing->notes-handle
