@@ -67,7 +67,7 @@
     (is (= ["0.1.0" "0.1.0-SNAPSHOT" "1.0.0" "1.0.1" "1.1.0"]
            (sort (mapv t/thing->name versions))))))
 
-(deftest list-platform-test
+(deftest list-platforms-test
   (let [p (-> (t/->Group "org.foo")
               (t/->Artifact "a")
               (t/->Version "1.1.0"))
