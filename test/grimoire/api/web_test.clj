@@ -33,6 +33,15 @@
     (doseq [?v (result ?res)]
       (is (t/version? ?v)))))
 
+(deftest list-platform-test
+  (let [v    (->  (t/->Group "org.clojure")
+                  (t/->Artifact "clojure")
+                  (t/->Version "1.6.0"))
+        ?res (api/list-platforms test-config v)]
+    (is (succeed? ?res))
+    (doseq [?platform (result ?res)]
+      (is (t/platform? ?platform)))))
+
 (deftest list-ns-test
   (let [v    (->  (t/->Group "org.clojure")
                   (t/->Artifact "clojure")
@@ -77,7 +86,7 @@
     (doseq [ns (result ?nss)]
       (is (t/namespace? ns))
       (is (succeed? (api/read-meta test-config ns)))
-        
+      
       (let [?defs (api/list-defs test-config ns)]
         (is (succeed? ?defs))
         (doseq [d (result ?defs)]
