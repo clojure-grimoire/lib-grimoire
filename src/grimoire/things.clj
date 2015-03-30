@@ -389,5 +389,4 @@
                       [(url/url-decode (nth path-elems 5))]
                       (drop 6 path-elems))
                      path-elems)]
-    (println path-elems)
     (path->thing (string/join "/" path-elems))))
