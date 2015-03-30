@@ -77,6 +77,9 @@
 (defmethod api/-list-namespaces ::web/Config [config version-thing]
   (do-thing-req config "namespaces" t/->Ns version-thing))
 
+(defmethod api/-list-platforms ::web/Config [config version-thing]
+  (do-thing-req config "platforms" t/->Platform version-thing))
+
 (defmethod api/-list-defs ::web/Config [config namespace-thing]
   (do-thing-req config "all" t/->Def namespace-thing))
 
