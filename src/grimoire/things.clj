@@ -224,6 +224,16 @@
   (let [v (->def namespace name)]
     (assoc v ::url (thing->path v))))
 
+(defn ->Example
+  [thing name handle]
+  (let [v (->example thing name handle)]
+    (assoc v ::url handle)))
+
+(defn ->Note
+  [thing name handle]
+  (let [v (->note thing name handle)]
+    (assoc v ::url handle)))
+
 ;; Manipulating things and strings
 
 (defn path->thing
