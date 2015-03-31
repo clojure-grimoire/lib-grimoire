@@ -1,4 +1,4 @@
-(defproject org.clojure-grimoire/lib-grimoire "0.9.0"
+(defproject org.clojure-grimoire/lib-grimoire "0.9.1"
   :description "A shared library for Grimoire infrastructure"
   :url "http://github.com/clojure-grimoire/lib-grimoire"
   :license {:name "Eclipse Public License"
@@ -9,6 +9,7 @@
                  [me.arrdem/detritus "0.2.2"
                   :exclusions [org.clojure/clojure]]
                  [com.cemerick/url "0.1.1"
-                  :exclusions [org.clojure/clojure]]]
+                  :exclusions [com.cemerick/clojurescript.test
+                               org.clojure/clojure]]]
   :profiles {:dev {:dependencies [[org.clojure/test.check "0.6.1"
                                    :exclusions [org.clojure/clojure]]]}})
