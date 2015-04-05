@@ -8,6 +8,8 @@
                   :exclusions [org.clojure/clojure]]
                  [me.arrdem/guten-tag "0.1.0-SNAPSHOT"
                   :exclusions [org.clojure/clojure]]
+                 [org.clojure/core.match "0.3.0-alpha4"
+                  :exclusions [org.clojure/clojure]]
                  [com.cemerick/url "0.1.1"
                   :exclusions [com.cemerick/clojurescript.test
                                org.clojure/clojure]]]
