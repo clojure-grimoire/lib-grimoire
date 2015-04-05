@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [version-clj "0.1.0"
                   :exclusions [org.clojure/clojure]]
-                 [me.arrdem/detritus "0.2.2"
+                 [me.arrdem/guten-tag "0.1.0-SNAPSHOT"
                   :exclusions [org.clojure/clojure]]
                  [com.cemerick/url "0.1.1"
                   :exclusions [com.cemerick/clojurescript.test

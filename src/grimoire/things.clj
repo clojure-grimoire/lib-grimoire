@@ -17,27 +17,27 @@
   (:refer-clojure :exclude [def namespace])
   (:require [clojure.string :as string]
             [grimoire.util :as u]
-            [detritus.variants :as v]
+            [guten-tag.core :as t]
             [cemerick.url :as url]))
 
-(v/deftag group
+(t/deftag group
   "Represents a Maven group."
   [name]
   {:pre [(string? name)]})
 
-(v/deftag artifact
+(t/deftag artifact
   "Represents a Maven artifact, rooted on a group."
   [parent, name]
   {:pre [(group? parent)
          (string? name)]})
 
-(v/deftag version
+(t/deftag version
   "Represents a Maven version, rooted on an artifact."
   [parent, name]
   {:pre [(artifact? parent)
          (string? name)]})
 
-(v/deftag platform
+(t/deftag platform
   "Represents a Clojure \"platform\" rooted on a version of an
   artifact.
 
@@ -53,14 +53,14 @@
   {:pre [(version? parent)
          (string? name)]})
 
-(v/deftag namespace
+(t/deftag namespace
   "Represents a Clojure \"namespace\" rooted on a platform in a
   version of an artifact."
   [parent, name]
   {:pre [(platform? parent)
          (string? name)]})
 
-(v/deftag def
+(t/deftag def
   "Represents a Clojure \"Def\" rooted in a namespace on a platform in
   a version of an artifact."
   [parent, name]
@@ -69,7 +69,7 @@
 
 (declare thing?)
 
-(v/deftag note
+(t/deftag note
   "Represents a single block of notes on an arbitrary Thing as
   identified by a Handle. The Handle is intended to be some structure
   such as a file path, record ID, UUID or something else uniquely
@@ -79,7 +79,7 @@
          (string? name)
          (string? handle)]})
 
-(v/deftag example
+(t/deftag example
   "Represents a single example on an arbitrary Thing as identified by
   a Handle. The Handle is intended to be some structure such as a file
   path, record ID, UUID or other unique identifier for that singular
@@ -251,11 +251,11 @@
   to the parent Thing type."
   [t thing]
   {:pre [(thing? thing)
-         (v/TagDescriptor? t)]}
+         (t/TagDescriptor? t)]}
   (->> thing
        (iterate thing->parent)
        (take-while identity)
-       (take-while #(not= (v/tag %1) (:tag t)))
+       (take-while #(not= (t/tag %1) (:tag t)))
        (reverse)
        (map thing->name)
        (interpose "/")
@@ -267,11 +267,11 @@
   given Thing type."
   [t thing]
   {:pre [(thing? thing)
-         (v/TagDescriptor? t)]}
+         (t/TagDescriptor? t)]}
   (->> thing
        (iterate thing->parent)
        (take-while identity)
-       (drop-while #(not= (v/tag %1) (:tag t)))
+       (drop-while #(not= (t/tag %1) (:tag t)))
        (reverse)
        (map thing->name)
        (interpose "/")
