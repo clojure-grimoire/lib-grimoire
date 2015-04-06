@@ -16,6 +16,7 @@
   Example   ::= Record[Parent: Thing,     Handle: String];"
   (:refer-clojure :exclude [def namespace])
   (:require [clojure.string :as string]
+            [clojure.core.match :refer [match]]
             [grimoire.util :as u]
             [guten-tag.core :as t]
             [cemerick.url :as url]))
@@ -166,32 +167,16 @@
   {:pre [(thing? t)]}
   (:name t))
 
-;; Helpers for stringifying and reading paths
-
-
-(defn thing->path
-  "Provides a mechanism for converting one of the Handle objects into a
-  cannonical \"path\" which can be serialized, deserialized and walked back into
-  a Handle."
-  [t]
-  {:pre [(thing? t)]}
-  (or (::url t)
-      (->> t
-           (iterate thing->parent)
-           (take-while identity)
-           (reverse)
-           (map thing->name)
-           (interpose "/")
-           (apply str))))
-
 ;; smarter url caching constructors
 
+
+(declare thing->url-path)
 
 (defn ->Group
   ([groupid]
    {:pre [(string? groupid)]}
    (let [v (->group groupid)]
-     (assoc v ::url (thing->path v))))
+     (assoc v ::url (thing->url-path v))))
 
   ([_ groupid]
    (->Group groupid)))
@@ -199,27 +184,27 @@
 (defn ->Artifact
   [group artifact]
   (let [v (->artifact group artifact)]
-    (assoc v ::url (thing->path v))))
+    (assoc v ::url (thing->url-path v))))
 
 (defn ->Version
   [artifact version]
   (let [v (->version artifact version)]
-    (assoc v ::url (thing->path v))))
+    (assoc v ::url (thing->url-path v))))
 
 (defn ->Platform
   [version platform]
   (let [v (->platform version (u/normalize-platform platform))]
-    (assoc v ::url (thing->path v))))
+    (assoc v ::url (thing->url-path v))))
 
 (defn ->Ns
   [platform namespace]
   (let [v (->namespace platform namespace)]
-    (assoc v ::url (thing->path v))))
+    (assoc v ::url (thing->url-path v))))
 
 (defn ->Def
   [namespace name]
   (let [v (->def namespace name)]
-    (assoc v ::url (thing->path v))))
+    (assoc v ::url (thing->url-path v))))
 
 (defn ->Example
   [thing name handle]
@@ -233,12 +218,21 @@
 
 ;; Manipulating things and strings
 
+(defn thing->path
+  "Provides a mechanism for converting one of the Handle objects into a
+  cannonical \"path\" which can be serialized, deserialized and walked back into
+  a Handle."
+  [t]
+  {:pre [(thing? t)]}
+  (or (::url t)
+      (thing->url-path t)))
+
 (defn path->thing
   "String to Thing transformer which builds a Thing tree by splitting on /. The
   resulting things are rooted on a Group as required by the definition of a
   Thing."
   [path]
-  (->> (string/split path #"/")
+  (->> (string/split path #"/" 6)
        (map vector [->Group ->Artifact ->Version ->Platform ->Ns ->Def])
        (reduce (fn [acc [f v]]
                  (if v (f acc v) acc))
@@ -297,7 +291,6 @@
 
 ;; Traversing things
 
-
 (defn thing->group
   "Function from a Thing to a Group. If the Thing is rooted on a Group,
   or is a Group, traverses thing->parent until a Group is produced. Otherwise
@@ -372,10 +365,15 @@
   "Function from a Thing to a munged and URL safe Thing path"
   [t]
   {:pre [(thing? t)]}
-  (if (def? t)
-    (str (thing->path (thing->parent t))
-         "/" (u/munge (thing->name t)))
-    (thing->path t)))
+  (match [t]
+    [([::def   {:name n :parent p}] :seq)]
+    ,,(str (thing->url-path p) "/" (u/munge n))
+
+    [([::group {:name n}] :seq)]
+    ,,n
+
+    [([_       {:name n :parent p}] :seq)]
+    ,,(str (thing->url-path p) "/" n)))
 
 ;; FIXME: this function could probably be a little more principled,
 ;; but so be it.
@@ -390,3 +388,66 @@
                       (drop 6 path-elems))
                      path-elems)]
     (path->thing (string/join "/" path-elems))))
+
+(defn thing->type-name
+  [t]
+  {:pre [(thing? t)]}
+  (match [t]
+    [([::group     {}] :seq)] "group"
+    [([::artifact  {}] :seq)] "artifact"
+    [([::version   {}] :seq)] "version"
+    [([::platform  {}] :seq)] "platform"
+    [([::namespace {}] :seq)] "namespace"
+    [([::def       {}] :seq)] "def"))
+
+(defn thing->full-uri
+  "Function from a Thing to a String representing a unique Thing naming URI.
+
+  URIs have the same structure as thing->url-path but are prefixed by <t>:
+  where <t> is the lower cased name of the type of the input Thing.
+
+  For example, a Thing represeting org.clojure/clojure would give the full URI
+  grim+artifact:org.clojure/clojure. A Thing representing org.clojure/clojure/1.6.0
+  would likewise be grim+version:org.clojure/clojure/1.6.0 and soforth."
+  [t]
+  {:pre [(thing? t)]}
+  (format "grim+%s:%s"
+          (thing->type-name t)
+          (thing->url-path t)))
+
+(def full-uri-pattern
+  #"(grim\+(group|artifact|version|platform|namespace|def)(\+(note|example))?):([^?&#]+)([?&#].*)?")
+
+(defn full-uri->thing
+  "Complement of thing->full-uri."
+  [uri-string]
+  {:pre [(string? uri-string)]}
+  (let [[_ scheme type _ extension path
+         :as groups] (re-find full-uri-pattern uri-string)]
+    (assert groups "Failed to parse URI. No regex match!")
+    (println groups)
+    (let [t (url-path->thing path)]
+      (assert (= (thing->type-name t) type)
+              "Failed to parse URI. Path didn't round trip to expected type!")
+      t)))
+
+(defn thing->short-string
+  "Function from a Thing to a String representing a mostly unique naming string.
+  
+  Unlike thing->full-uri, thing->short-string will discard exact artifact, group
+  and verison information instead giving only a URI with respect to the
+  platform, namespace and name of a Thing.
+
+  For example, the Thing representing
+  org.clojure/clojure/1.6.0/clj/clojure.core/+ would give the short string
+  clj::clojure.core/+."
+  [t]
+  {:pre [(platformed? t)]}
+  (match [t]
+    [([::namespace {:name nn :parent {:name pn}}] :seq)]
+    ,,(format "%s::%s" pn nn)
+    [([::def       {:name n :parent {:name nn :parent {:name pn}}}] :seq)]
+    ,,(format "%s::%s/%s"
+              pn nn n)))
+
+;; short-string->thing to be defined in terms of a search for the latest version.
