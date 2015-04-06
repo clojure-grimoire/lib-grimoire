@@ -12,6 +12,7 @@
             [grimoire.util :as util]
             [grimoire.either :as e]
             [detritus.variants :as v]
+            [clojure.core.match :refer [match]]
             [version-clj.core :as semver]))
 
 (defn dispatch
@@ -256,26 +257,55 @@
 
   [config thing]
   {:pre [(t/versioned? thing)
-         (not (:handle thing))]}
-  (let [thing    (t/ensure-thing thing)
-        currentv (t/thing->version thing)               ; version handle
-        current  (-> currentv :name util/normalize-version)
-        added    (-> (read-meta config thing)
-                     e/result
-                     (get :added "0.0.0")
-                     util/normalize-version)
-        unv-path (t/thing->relative-path t/version thing)
-        versions (e/result (list-versions config (:parent currentv)))]
-    (e/succeed
-     (for [v     versions
-           :when (<= 0 (semver/version-compare (:name v) added))
-           :when (>= 0 (semver/version-compare (:name v) current))]
-       ;; FIXME: this could be a direct constructor given an
-       ;; appropriate vehicle for doing so since the type is directed
-       ;; and single but may not generally make sense if this is not
-       ;; the case.
-       (t/path->thing (str (t/thing->path v) "/" unv-path))))))
+         (not (t/leaf? thing))]}
+  (match thing
+    ;; Case of a Version
+    ;;
+    ;; (list all the versions using the API)
+    ;;----------------------------------------
+    ([::t/version {:name n :parent artifact}] :seq)
+    ,,(list-versions config artifact)
 
+    ;; Case of a Platform or Ns
+    ;;
+    ;; (return yourself re-rooted on each of the new parents)
+    ;;----------------------------------------
+    ([(:or ::t/platform
+           ::t/namespace)
+      {:name n :parent p}] :seq)
+    ,,(let [?versions (thing->prior-versions config p)]
+        (if (e/succeed? ?versions)
+          (e/succeed
+           (for [v (e/result ?versions)]
+             (-> thing
+                 (assoc :parent v)
+                 (dissoc ::t/url))))
+          ?versions))
+
+    ;; Case of a Def
+    ;;
+    ;; (filter out only the older versions)
+    ;;----------------------------------------
+    ([::t/def {:name n :parent parent}] :seq)
+    (let [currentv  (t/thing->version thing)               ; version handle
+          current   (-> currentv :name util/normalize-version)
+          added     (-> (read-meta config thing)
+                        e/result
+                        (get :added "0.0.0")
+                        util/normalize-version)
+          ?versions (thing->prior-versions config parent)]
+      (if (e/succeed? ?versions)
+        (e/succeed
+         (for [other-p (e/result ?versions)
+               :let    [version-thing (t/thing->version other-p)
+                        version-str   (t/thing->name version-thing)]
+               :when (<= 0 (semver/version-compare version-str added))
+               :when (>= 0 (semver/version-compare version-str current))]
+           (-> thing
+               (assoc :parent other-p)
+               (dissoc ::t/url))))
+        ?versions))))
+  
 (defn read-notes
   "Succeeds with a result Seq[Version, string], being the zip of list-notes with
   read-note for each listed note.
