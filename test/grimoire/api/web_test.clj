@@ -4,6 +4,7 @@
             [grimoire.either :refer [succeed? result]]
             [grimoire.api.web :refer [->Config]]
             [grimoire.api.web.read]
+            [clojure.set :as set]
             [clojure.test :refer :all]))
 
 (def test-config
@@ -60,8 +61,9 @@
                  (t/->Ns "clojure.core"))
         ?res (api/thing->prior-versions test-config ns)]
     (is (succeed? ?res))
-    (is (= #{"1.6.0" "1.5.0" "1.4.0"}
-           (->> ?res result (map (comp t/thing->name t/thing->version)) set)))))
+    (is (set/subset?
+         #{"1.6.0" "1.5.0" "1.4.0"}
+         (->> ?res result (map (comp t/thing->name t/thing->version)) set)))))
 
 (deftest list-def-test
   (let [ns   (-> (t/->Group "org.clojure")

@@ -24,6 +24,7 @@
    "org.foo/a/1.1.0/clj/a.core"
    "org.foo/a/1.1.0/clj/a.core/foo?"
    "org.foo/a/1.1.0/clj/a.core/foo"
+   "org.foo/a/1.1.0/clj/a.core/qux"
    "org.foo/a/1.1.0/clj/a.core/qux!"
    "org.foo/a/1.1.0/clj/a.core/qux."
    "org.foo/a/1.1.0/pixi/a.core/qux."
@@ -96,20 +97,20 @@
            (sort (mapv t/thing->name nss))))))
 
 (deftest list-prior-versions-test
-  (let [ns   (-> (t/->Group "org.foo")
-                 (t/->Artifact "a")
-                 (t/->Version "1.1.0")
-                 (t/->Platform "clj")
-                 (t/->Ns "a.core"))
-        defs (-> test-config
-                 (api/thing->prior-versions ns)
-                 result)]
+  (let [ns       (-> (t/->Group "org.foo")
+                     (t/->Artifact "a")
+                     (t/->Version "1.1.0")
+                     (t/->Platform "clj")
+                     (t/->Ns "a.core"))
+        versions (-> test-config
+                     (api/thing->prior-versions ns)
+                     result)]
     (is (= ["org.foo/a/0.1.0-SNAPSHOT/clj/a.core"
             "org.foo/a/0.1.0/clj/a.core"
             "org.foo/a/1.0.0/clj/a.core"
             "org.foo/a/1.0.1/clj/a.core"
             "org.foo/a/1.1.0/clj/a.core"]
-           (sort (mapv t/thing->path defs))))))
+           (sort (mapv t/thing->path versions))))))
 
 (deftest list-def-test
   (let [ns   (-> (t/->Group "org.foo")
