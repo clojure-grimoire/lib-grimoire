@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [version-clj "0.1.0"
                   :exclusions [org.clojure/clojure]]
-                 [me.arrdem/guten-tag "0.1.0-SNAPSHOT"
+                 [me.arrdem/guten-tag "0.1.0"
                   :exclusions [org.clojure/clojure]]
                  [org.clojure/core.match "0.3.0-alpha4"
                   :exclusions [org.clojure/clojure]]
