@@ -12,30 +12,132 @@
             [grimoire.util :as util]
             [grimoire.either :as e]
             [detritus.variants :as v]
+            [clojure.core.match :refer [match]]
             [version-clj.core :as semver]))
 
 (defn dispatch
   "Common dispatch function for all the API multimethods."
+
   [config & more]
   (v/tag config))
 
 ;; Datastore API impl' multimethods - listing & reading
 ;;--------------------------------------------------------------------
-(defmulti -list-groups dispatch)
-(defmulti -list-artifacts dispatch)
-(defmulti -list-versions dispatch)
-(defmulti -list-platforms dispatch)
-(defmulti -list-namespaces dispatch)
-(defmulti -list-defs dispatch)
-(defmulti -list-notes dispatch)
-(defmulti -list-examples dispatch)
-(defmulti -list-related dispatch)
+(defmulti -list-groups
+  "Implementation extension point of clj::grimoire.api/list-groups. Listing APIs
+  must extend this multimethod.
 
-(defmulti -read-meta dispatch)
-(defmulti -read-note dispatch)
-(defmulti -read-example dispatch)
+  λ [config] → (Either (Succeed (Seq Group)) (Failure String))"
 
-;; Datastore API impl' multimethods - listing & reading
+  dispatch)
+
+(defmulti -list-artifacts
+  "Implementation extension point of clj::grimoire.api/list-artifacts. Listing APIs
+  must extend this multimethod.
+
+  λ [config Group] → (Either (Succeed (Seq Artifact)) (Failure String))"
+  
+  dispatch)
+
+(defmulti -list-versions
+  "Implementation extension point of clj::grimoire.api/list-versions. Listing APIs
+  must extend this multimethod.
+
+  λ [config Artifact] → (Either (Succeed (Seq Version)) (Failure String))"
+
+  dispatch)
+
+(defmulti -list-platforms
+  "Implementation extension point of clj::grimoire.api/list-platforms. Listing APIs
+  must extend this multimethod.
+
+  λ [config Version] → (Either (Succeed (Seq Platform)) (Failure String))"
+
+  dispatch)
+
+(defmulti -list-namespaces
+  "Implementation extension point of clj::grimoire.api/list-namespaces. Listing APIs
+  must extend this multimethod.
+
+  λ [config Platform] → (Either (Succeed (Seq Ns)) (Failure String))"
+
+  dispatch)
+
+(defmulti -list-defs
+  "Implementation extension point of clj::grimoire.api/list-defs. Listing APIs
+  must extend this multimethod.
+
+  λ [config Ns] → (Either (Succeed (Seq Def)) (Failure String))"
+
+  dispatch)
+
+(defmulti -list-notes
+  "Implementation extension point of clj::grimoire.api/list-notes. Listing APIs
+  must extend this multimethod.
+
+  λ [config Thing] → (Either (Succeed (Seq Note)) (Failure String))"
+
+  dispatch)
+
+(defmulti -list-examples
+  "Implementation extension point of clj::grimoire.api/list-examples. Listing APIs
+  must extend this multimethod.
+
+  λ [config Thing] → (Either (Succeed (Seq Example)) (Failure String))"
+
+  dispatch)
+
+(defmulti -list-related
+  "Implementation extension point of clj::grimoire.api/list-related. Listing APIs
+  must extend this multimethod.
+
+  λ [config Thing] → (Either (Succeed (Seq Thing)) (Failure String))"
+
+  dispatch)
+
+(defmulti -read-meta
+  "Implementation extension point of clj::grimoire.api/read-meta. Listing APIs
+  must extend this multimethod.
+
+  λ [config Thing] → (Either (Succeed Map) (Failure String))"
+
+  dispatch)
+
+(defmulti -read-note
+  "Implementation extension point of clj::grimoire.api/read-note. Listing APIs
+  must extend this multimethod.
+
+  λ [config Note] → (Either (Succeed String) (Failure String))"
+
+  dispatch)
+
+(defmulti -read-example
+  "Implementation extension point of clj::grimoire.api/read-example. Listing APIs
+  must extend this multimethod.
+
+  λ [config Artifact] → (Either (Succeed String) (Failure String))"
+
+  dispatch)
+
+(defmulti -thing->prior-versions
+  "Implementation extension point of clj::grimoire.api/thing->prior-versions. Listing
+  APIs may implement this multimethod, however a default implementation in terms
+  of the various listing operations.
+
+  λ [config Thing] → (Either (Succeed (Seq Thing)) (Failure String))"
+
+  dispatch)
+
+(defmulti -search
+  "Implementation extension point of clj::grimoire.api/search. Listing APIs may
+  implement this multimethod, however a default implementation in terms of the
+  various listing operations and clj::clojure.core/for is provided.
+
+  λ [config Pattern] → (Either (Succeed (Seq Thing)) (Failure String))"
+
+  dispatch)
+
+;; Datastore API impl' multimethods - writing
 ;;--------------------------------------------------------------------
 (defmulti -write-meta dispatch)
 (defmulti -write-note dispatch)
@@ -50,6 +152,7 @@
   groups.
 
   Fails if the datstore isn't correctly configured or missing."
+
   [config]
   (-list-groups config))
 
@@ -256,25 +359,58 @@
 
   [config thing]
   {:pre [(t/versioned? thing)
-         (not (:handle thing))]}
-  (let [thing    (t/ensure-thing thing)
-        currentv (t/thing->version thing)               ; version handle
-        current  (-> currentv :name util/normalize-version)
-        added    (-> (read-meta config thing)
-                     e/result
-                     (get :added "0.0.0")
-                     util/normalize-version)
-        unv-path (t/thing->relative-path t/version thing)
-        versions (e/result (list-versions config (:parent currentv)))]
-    (e/succeed
-     (for [v     versions
-           :when (<= 0 (semver/version-compare (:name v) added))
-           :when (>= 0 (semver/version-compare (:name v) current))]
-       ;; FIXME: this could be a direct constructor given an
-       ;; appropriate vehicle for doing so since the type is directed
-       ;; and single but may not generally make sense if this is not
-       ;; the case.
-       (t/path->thing (str (t/thing->path v) "/" unv-path))))))
+         (not (t/leaf? thing))]}
+  (-thing->prior-versions config thing))
+
+(defmethod -thing->prior-versions :default
+  [config thing]
+  (match thing
+    ;; Case of a Version
+    ;;
+    ;; (list all the versions using the API)
+    ;;----------------------------------------
+    ([::t/version {:name n :parent artifact}] :seq)
+    ,,(list-versions config artifact)
+
+    ;; Case of a Platform or Ns
+    ;;
+    ;; (return yourself re-rooted on each of the new parents)
+    ;;----------------------------------------
+    ([(:or ::t/platform
+           ::t/namespace)
+      {:name n :parent p}] :seq)
+    ,,(let [?versions (thing->prior-versions config p)]
+        (if (e/succeed? ?versions)
+          (e/succeed
+           (for [v (e/result ?versions)]
+             (-> thing
+                 (assoc :parent v)
+                 (dissoc ::t/url))))
+          ?versions))
+
+    ;; Case of a Def
+    ;;
+    ;; (filter out only the older versions)
+    ;;----------------------------------------
+    ([::t/def {:name n :parent parent}] :seq)
+    (let [currentv  (t/thing->version thing)               ; version handle
+          current   (-> currentv :name util/normalize-version)
+          added     (-> (read-meta config thing)
+                        e/result
+                        (get :added "0.0.0")
+                        util/normalize-version)
+          ?versions (thing->prior-versions config parent)]
+      (if (e/succeed? ?versions)
+        (e/succeed
+         (for [other-p (e/result ?versions)
+               :let    [version-thing (t/thing->version other-p)
+                        version-str   (t/thing->name version-thing)]
+               :when (<= 0 (semver/version-compare version-str added))
+               :when (>= 0 (semver/version-compare version-str current))]
+           (-> thing
+               (assoc :parent other-p)
+               (dissoc ::t/url))))
+        ?versions))))
 
 (defn read-notes
   "Succeeds with a result Seq[Version, string], being the zip of list-notes with
@@ -285,6 +421,7 @@
   Legacy from the 0.7.X and earlier API. Note that this function does _not_
   return the Note instances themselves, only the versions each read note is
   attached to."
+
   [config thing]
   (let [?notes (list-notes config thing)]
     (if (e/succeed? ?notes)
@@ -296,3 +433,160 @@
         (catch Exception e
           (e/fail (.getMessage e))))
       ?notes)))
+
+(defn search
+  "Succeeds with a result Seq[Thing], being a list of all the Things in the
+  given datastore which match the given search structure.
+
+  Search patterns are vectors of the form [<type> &parts] where a type is one of
+  the Thing keywords, and &parts is a sequence terms being either sets of
+  strings, strings, regexes, functions, nil or the keyword :any.
+
+  - nil as a term matches any Thing
+  - :any as a term matches any Thing
+  - Sets as a term match Thing with its Name in the set
+  - Strings as a term match any Thing with an equal Name
+  - Regexps as a Term match any Thing with a matching Name
+  - Fns as a term match any Thing such that (f T) is truthy
+
+  Examples:
+  > [:def :any :any :any :any \"clojure.core\" \"concat\"]
+
+  Will match all instances of Defs named \"clojure.core/concat\" on all
+  platforms in all versions in all artifacts in all groups.
+
+  > [:ns :any \"clojure\" :any :any \"clojure.set\"]
+
+  Will match all instances of Nss named \"clojure.set\" in all artifacts named
+  \"clojure\" in all versions, platforms and groups.
+
+  > [:ns #\"org.*\" :any :any :any :any]
+
+  Will match all instances of Ns in any platform of any version of any artifact
+  in a Maven group matching the regex #\"org.*\""
+
+  [config pattern]
+  (-search config pattern))
+
+(defn- matches?
+  "Helper function to clj::grimoire.api/search which serves to determine whether
+  a pattern matches a Thing.
+
+  Supported patterns:
+  - nil, matches anything
+  - :any, matches anything
+  - Sets, match any member by Name
+  - Strings, matches any Thing with an equal Name
+  - Regexp, matches any Thing with a matching Name
+  - Fn, matches iff (f T) is truthy"
+
+  [pattern term]
+  {:pre [(t/thing? term)]}
+  (cond
+    (or (= nil pattern)
+        (= :any pattern))
+    ,,true
+
+    (set? pattern)
+    ,,(contains? pattern (t/thing->name term))
+
+    (string? pattern)
+    ,,(= pattern (t/thing->name term))
+
+    (instance? java.util.regex.Pattern pattern)
+    ,,(re-find pattern (t/thing->name term))
+
+    (fn? pattern)
+    ,,(pattern term)))
+
+(defn- downgrade
+  "Helper to `search`. Returns the left-recursive subquery from a given
+  query. Used to implement clj::grimoire.api/search in terms of left recursive
+  query descent."
+
+  [pattern]
+  (let [tm {:def      :ns
+            :ns       :platform
+            :platform :version
+            :version  :artifact
+            :artifact :group}]
+    (cons (tm (first pattern))
+          (rest (butlast pattern)))))
+
+(defn- recur-and-filter [cfg pattern el list-fn]
+  (let [?subterms (-search cfg (downgrade pattern))]
+    (if (e/succeed? ?subterms)
+      (e/succeed
+       (for [r     (e/result ?subterms)
+             ir    (e/result (list-fn cfg r))
+             :when (matches? el ir)]
+         ir))
+      ?subterms)))
+
+;; Default naive implementation of searching as above
+(defmethod -search :default [config pattern]
+  (let [f (partial recur-and-filter config pattern)]
+    (match [pattern]
+      ;; Case of a def
+      ;;----------------------------------------
+      [([:def gid art v plat ns name] :seq)]
+      ,,(f name list-defs)
+
+      ;; Case of a ns
+      ;;----------------------------------------
+      [([:ns gid art v plat ns] :seq)]
+      ,,(f ns list-namespaces)
+
+      ;; Case of a platform
+      ;;----------------------------------------
+      [([:platform gid art v plat] :seq)]
+      ,,(f plat list-platforms)
+      
+      ;; Case of a version
+      ;;----------------------------------------
+      [([:version gid art v] :seq)]
+      ,,(f v list-versions)
+      
+      ;; Case of an artifact
+      ;;----------------------------------------
+      [([:artifact gid art] :seq)]
+      ,,(f art list-artifacts)
+
+      ;; Case of a group
+      ;;----------------------------------------
+      [([:group gid] :seq)]
+      ,,(e/succeed
+         (for [cg    (e/result (list-groups config))
+               :when (matches? gid cg)]
+           cg)))))
+
+(defn resolve-short-string
+  "Succeeds with a result Thing, mapping a short string as generated by
+  clj::grimoire.things/thing->short-string back to a thing via
+  clj::grimoire.api/search."
+
+  [config s]
+  {:pre [(string? s)]}
+  (if-let [res (t/parse-short-string s)]
+    (match [res]
+      ;; Case of a def
+      ;;----------------------------------------
+      [([:def gid art v plat ns name] :seq)]
+      (let [?res (search config res)]
+        (if (e/succeed? ?res)
+          (e/succeed (first (e/result ?res)))
+          ?res))
+      
+      ;; Case of a ns
+      ;;----------------------------------------
+      [([:ns  gid art v plat ns] :seq)]
+      (let [?res (search config res)]
+        (if (e/succeed? ?res)
+          (e/succeed (first (e/result ?res)))
+          ?res))
+
+      ;; Default case
+      ;;----------------------------------------
+      [_]
+      (e/fail "Unknown parse-short-string result!"))
+    (e/fail "Could not parse string!")))

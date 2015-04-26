@@ -267,6 +267,13 @@ Note that they are heavily used within Grimoire as of 0.4.12 for exactly this re
 - `grimoire.things/thing->name` no longer objects to an Example or Note instance.
 - `grimoire.api.web/make-api-url` added.
 - `grimoire.api.web/make-html-url` added.
+- `grimoire.things/thing->type-name` added.
+- `grimoire.things/thing->full-uri` added.
+- `grimoire.things/full-uri->thing` added.
+- `grimoire.things/thing->short-string` added.
+- `grimoire.things/thing->url-path` refactored in terms of core.match.
+- `grimoire.things` refactored to use `me.arrdem/guten-tag`.
+- `grimoire.things/thing->path` now uses `grimoire.things/thing->url-path` under the hood.
 
 **0.8.\***:
 - Things are now encoded using Detritus' tagged values system.
