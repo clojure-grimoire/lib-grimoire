@@ -35,6 +35,7 @@
 (defmulti -read-meta dispatch)
 (defmulti -read-note dispatch)
 (defmulti -read-example dispatch)
+(defmulti -search dispatch)
 
 ;; Datastore API impl' multimethods - listing & reading
 ;;--------------------------------------------------------------------
@@ -400,6 +401,10 @@
   Will match all instances of Ns in any platform of any version of any artifact
   in a Maven group matching the regex #\"org.*\""
   [config pattern]
+  (-search config pattern))
+
+;; Default naive implementation of searching as above
+(defmethod -search :default [config pattern]
   (match [pattern]
     ;; Case of a def
     ;;----------------------------------------
