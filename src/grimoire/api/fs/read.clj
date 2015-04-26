@@ -102,30 +102,34 @@
 
 (defmethod api/-list-notes ::fs/Config [config thing]
   {:pre [(t/thing? thing)]}
-  (if (t/versioned? thing)
-    (let [versions (api/thing->prior-versions config thing)
-          lhs      (.toPath (io/file (:notes config)))]
-      (if (succeed? versions)
-        (succeed
-         (for [prior-thing (result versions)
-               :let  [v (t/thing->name (t/thing->version prior-thing))
-                      h (impl/thing->notes-handle config prior-thing)]
-               :when (.exists h)
-               :when (.isFile h)]
-           (let [rhs (.toPath h)
-                 p   (.relativize lhs rhs)]
-             (-> thing
-                 (t/->Note (.getName h)
-                           (.getPath h))
-                 (assoc ::t/file (.toString p))))))
+  (let [lhs      (.toPath (io/file (:notes config)))]
+    (if (t/versioned? thing)
+      (let [versions (api/thing->prior-versions config thing)]
+        (if (succeed? versions)
+          (succeed
+           (for [prior-thing (result versions)
+                 :let  [v (t/thing->name (t/thing->version prior-thing))
+                        h (impl/thing->notes-handle config prior-thing)]
+                 :when (.exists h)
+                 :when (.isFile h)]
+             (let [rhs (.toPath h)
+                   p   (.relativize lhs rhs)]
+               (-> thing
+                   (t/->Note (.getName h)
+                             (.getPath h))
+                   (assoc ::t/file (.toString p))))))
 
-        ;; versions is a Fail, pass it down
-        versions))
+          ;; versions is a Fail, pass it down
+          versions))
 
-    (let [^java.io.File h (impl/thing->notes-handle config thing)]
-      (if (.exists h)
-        (succeed [(t/->Note thing, (.getName h), (.getPath h))])
-        (fail "No notes file!")))))
+      (let [^java.io.File h (impl/thing->notes-handle config thing)]
+        (if (.exists h)
+          (let [rhs (.toPath h)
+                p   (.relativize lhs rhs)]
+            (succeed [(-> thing
+                          (t/->Note (.getName h), (.getPath h))
+                          (assoc ::t/file (.toString p)))]))
+          (fail "No notes file!"))))))
 
 (defmethod api/-list-examples ::fs/Config [config thing]
   {:pre [(t/thing? thing)]}
