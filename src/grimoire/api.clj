@@ -434,6 +434,40 @@
           (e/fail (.getMessage e))))
       ?notes)))
 
+(defn search
+  "Succeeds with a result Seq[Thing], being a list of all the Things in the
+  given datastore which match the given search structure.
+
+  Search patterns are vectors of the form [<type> &parts] where a type is one of
+  the Thing keywords, and &parts is a sequence terms being either sets of
+  strings, strings, regexes, functions, nil or the keyword :any.
+
+  - nil as a term matches any Thing
+  - :any as a term matches any Thing
+  - Sets as a term match Thing with its Name in the set
+  - Strings as a term match any Thing with an equal Name
+  - Regexps as a Term match any Thing with a matching Name
+  - Fns as a term match any Thing such that (f T) is truthy
+
+  Examples:
+  > [:def :any :any :any :any \"clojure.core\" \"concat\"]
+
+  Will match all instances of Defs named \"clojure.core/concat\" on all
+  platforms in all versions in all artifacts in all groups.
+
+  > [:ns :any \"clojure\" :any :any \"clojure.set\"]
+
+  Will match all instances of Nss named \"clojure.set\" in all artifacts named
+  \"clojure\" in all versions, platforms and groups.
+
+  > [:ns #\"org.*\" :any :any :any :any]
+
+  Will match all instances of Ns in any platform of any version of any artifact
+  in a Maven group matching the regex #\"org.*\""
+
+  [config pattern]
+  (-search config pattern))
+
 (defn- matches?
   "Helper function to clj::grimoire.api/search which serves to determine whether
   a pattern matches a Thing.
@@ -479,110 +513,52 @@
     (cons (tm (first pattern))
           (rest (butlast pattern)))))
 
-(defn search
-  "Succeeds with a result Seq[Thing], being a list of all the Things in the
-  given datastore which match the given search structure.
-
-  Search patterns are vectors of the form [<type> &parts] where a type is one of
-  the Thing keywords, and &parts is a sequence terms being either sets of
-  strings, strings, regexes, functions, nil or the keyword :any.
-
-  - nil as a term matches any Thing
-  - :any as a term matches any Thing
-  - Sets as a term match Thing with its Name in the set
-  - Strings as a term match any Thing with an equal Name
-  - Regexps as a Term match any Thing with a matching Name
-  - Fns as a term match any Thing such that (f T) is truthy
-
-  Examples:
-  > [:def :any :any :any :any \"clojure.core\" \"concat\"]
-
-  Will match all instances of Defs named \"clojure.core/concat\" on all
-  platforms in all versions in all artifacts in all groups.
-
-  > [:ns :any \"clojure\" :any :any \"clojure.set\"]
-
-  Will match all instances of Nss named \"clojure.set\" in all artifacts named
-  \"clojure\" in all versions, platforms and groups.
-
-  > [:ns #\"org.*\" :any :any :any :any]
-
-  Will match all instances of Ns in any platform of any version of any artifact
-  in a Maven group matching the regex #\"org.*\""
-
-  [config pattern]
-  (-search config pattern))
+(defn- recur-and-filter [cfg pattern el list-fn]
+  (let [?subterms (-search cfg (downgrade pattern))]
+    (if (e/succeed? ?subterms)
+      (e/succeed
+       (for [r     (e/result ?subterms)
+             ir    (e/result (list-fn cfg r))
+             :when (matches? el ir)]
+         ir))
+      ?subterms)))
 
 ;; Default naive implementation of searching as above
 (defmethod -search :default [config pattern]
-  (match [pattern]
-    ;; Case of a def
-    ;;----------------------------------------
-    [([:def gid art v plat ns name] :seq)]
-    ,,(let [?subterms (search config (downgrade pattern))]
-        (if (e/succeed? ?subterms)
-          (e/succeed
-           (for [ns    (e/result ?subterms) ;; Seq of Ns
-                 cname (e/result (list-defs config ns))
-                 :when (matches? name cname)]
-             cname))
-          ?subterms))
-    
-    ;; Case of a ns
-    ;;----------------------------------------
-    [([:ns gid art v plat ns] :seq)]
-    ,,(let [?subterms (search config (downgrade pattern))]
-        (if (e/succeed? ?subterms)
-          (e/succeed
-           (for [platform (e/result ?subterms) ;; Seq of Platform
-                 cns      (e/result (list-namespaces config platform))
-                 :when    (matches? ns cns)]
-             cns))
-          ?subterms))
+  (let [f (partial recur-and-filter config pattern)]
+    (match [pattern]
+      ;; Case of a def
+      ;;----------------------------------------
+      [([:def gid art v plat ns name] :seq)]
+      ,,(f name list-defs)
 
-    ;; Case of a platform
-    ;;----------------------------------------
-    [([:platform gid art v plat] :seq)]
-    ,,(let [?subterms (search config (downgrade pattern))]
-        (if (e/succeed? ?subterms)
-          (e/succeed
-           (for [version (e/result ?subterms) ;; Seq Version
-                 cplat   (e/result (list-platforms config version))
-                 :when   (matches? plat cplat)]
-             cplat))
-          ?subterms))
-    
-    ;; Case of a version
-    ;;----------------------------------------
-    [([:version gid art v] :seq)]
-    ,,(let [?subterms (search config (downgrade pattern))]
-        (if (e/succeed? ?subterms)
-          (e/succeed
-           (for [artifact (e/result ?subterms) ;; Seq Artifact
-                 cvers    (e/result (list-versions config artifact))
-                 :when    (matches? v cvers)]
-             cvers))
-          ?subterms))
-    
-    ;; Case of an artifact
-    ;;----------------------------------------
-    [([:artifact gid art] :seq)]
-    ,,(let [?subterms (search config (downgrade pattern))]
-        (if (e/succeed? ?subterms)
-          (e/succeed
-           (for [group (e/result ?subterms) ;; Seq Group
-                 ca    (e/result (list-artifacts config group))
-                 :when (matches? art ca)]
-             ca))
-          ?subterms))
+      ;; Case of a ns
+      ;;----------------------------------------
+      [([:ns gid art v plat ns] :seq)]
+      ,,(f ns list-namespaces)
 
-    ;; Case of a group
-    ;;----------------------------------------
-    [([:group gid] :seq)]
-    ,,(e/succeed
-       (for [cg (e/result (list-groups config))
-             :when (matches? gid cg)]
-         cg))))
+      ;; Case of a platform
+      ;;----------------------------------------
+      [([:platform gid art v plat] :seq)]
+      ,,(f plat list-platforms)
+      
+      ;; Case of a version
+      ;;----------------------------------------
+      [([:version gid art v] :seq)]
+      ,,(f v list-versions)
+      
+      ;; Case of an artifact
+      ;;----------------------------------------
+      [([:artifact gid art] :seq)]
+      ,,(f art list-artifacts)
+
+      ;; Case of a group
+      ;;----------------------------------------
+      [([:group gid] :seq)]
+      ,,(e/succeed
+         (for [cg    (e/result (list-groups config))
+               :when (matches? gid cg)]
+           cg)))))
 
 (defn resolve-short-string
   "Succeeds with a result Thing, mapping a short string as generated by
