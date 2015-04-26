@@ -432,7 +432,7 @@
       t)))
 
 (def short-string-pattern
-  #"(\w{3,6})::([^\s/:]+)(/([^:\s]+))?")
+  #"(\w{3,6})::([^\s/,;:\"'\[\]\(\)\s]+)(/([^,;:\"'\[\]\(\)\s]+))?")
 
 (defn thing->short-string
   "Function from a Thing to a String representing a mostly unique naming string.
