@@ -479,12 +479,12 @@
   Examples:
   > [:def :any :any :any :any \"clojure.core\" \"concat\"]
 
-  Will match all instances of the Def clojure.core/concat on all platforms in
-  all versions in all artifacts in all groups.
+  Will match all instances of Defs named \"clojure.core/concat\" on all
+  platforms in all versions in all artifacts in all groups.
 
   > [:ns :any \"clojure\" :any :any \"clojure.set\"]
 
-  Will match all instances of the Ns clojure.set in all artifacts named
+  Will match all instances of Nss named \"clojure.set\" in all artifacts named
   \"clojure\" in all versions, platforms and groups.
 
   > [:ns #\"org.*\" :any :any :any :any]
