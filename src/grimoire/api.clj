@@ -346,6 +346,10 @@
   [config thing]
   {:pre [(t/versioned? thing)
          (not (t/leaf? thing))]}
+  (-thing->prior-versions config thing))
+
+(defmethod -thing->prior-versions :default
+  [config thing]
   (match thing
     ;; Case of a Version
     ;;
