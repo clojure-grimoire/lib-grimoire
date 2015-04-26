@@ -305,7 +305,7 @@
                (assoc :parent other-p)
                (dissoc ::t/url))))
         ?versions))))
-  
+
 (defn read-notes
   "Succeeds with a result Seq[Version, string], being the zip of list-notes with
   read-note for each listed note.
