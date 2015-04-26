@@ -348,10 +348,10 @@
   [config s]
   {:pre [(string? s)]}
   (if-let [res (t/parse-short-string s)]
-    (match res
+    (match [res]
       ;; Case of a def
       ;;----------------------------------------
-      ([:def gid art v plat ns name] :seq)
+      [([:def gid art v plat ns name] :seq)]
       (let [?res (search config res)]
         (if (e/succeed? ?res)
           (e/succeed (first (e/result ?res)))
@@ -359,7 +359,7 @@
       
       ;; Case of a ns
       ;;----------------------------------------
-      ([:ns  gid art v plat ns name] :seq)
+      [([:ns  gid art v plat ns] :seq)]
       (let [?res (search config res)]
         (if (e/succeed? ?res)
           (e/succeed (first (e/result ?res)))
@@ -367,6 +367,6 @@
 
       ;; Default case
       ;;----------------------------------------
-      (_ :seq)
+      [_]
       (e/fail "Unknown parse-short-string result!"))
     (e/fail "Could not parse string!")))
