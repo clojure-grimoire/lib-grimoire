@@ -44,6 +44,7 @@
   must extend this multimethod.
 
   λ [config Artifact] → (Either (Succeed (Seq Version)) (Failure String))"
+
   dispatch)
 
 (defmulti -list-platforms
@@ -51,6 +52,7 @@
   must extend this multimethod.
 
   λ [config Version] → (Either (Succeed (Seq Platform)) (Failure String))"
+
   dispatch)
 
 (defmulti -list-namespaces
@@ -58,6 +60,7 @@
   must extend this multimethod.
 
   λ [config Platform] → (Either (Succeed (Seq Ns)) (Failure String))"
+
   dispatch)
 
 (defmulti -list-defs
@@ -65,6 +68,7 @@
   must extend this multimethod.
 
   λ [config Ns] → (Either (Succeed (Seq Def)) (Failure String))"
+
   dispatch)
 
 (defmulti -list-notes
@@ -72,6 +76,7 @@
   must extend this multimethod.
 
   λ [config Thing] → (Either (Succeed (Seq Note)) (Failure String))"
+
   dispatch)
 
 (defmulti -list-examples
@@ -79,6 +84,7 @@
   must extend this multimethod.
 
   λ [config Thing] → (Either (Succeed (Seq Example)) (Failure String))"
+
   dispatch)
 
 (defmulti -list-related
@@ -86,6 +92,7 @@
   must extend this multimethod.
 
   λ [config Thing] → (Either (Succeed (Seq Thing)) (Failure String))"
+
   dispatch)
 
 (defmulti -read-meta
@@ -93,6 +100,7 @@
   must extend this multimethod.
 
   λ [config Thing] → (Either (Succeed Map) (Failure String))"
+
   dispatch)
 
 (defmulti -read-note
@@ -100,6 +108,7 @@
   must extend this multimethod.
 
   λ [config Note] → (Either (Succeed String) (Failure String))"
+
   dispatch)
 
 (defmulti -read-example
@@ -107,6 +116,7 @@
   must extend this multimethod.
 
   λ [config Artifact] → (Either (Succeed String) (Failure String))"
+
   dispatch)
 
 (defmulti -thing->prior-versions
@@ -115,6 +125,7 @@
   of the various listing operations.
 
   λ [config Thing] → (Either (Succeed (Seq Thing)) (Failure String))"
+
   dispatch)
 
 (defmulti -search
@@ -123,6 +134,7 @@
   various listing operations and clj::clojure.core/for is provided.
 
   λ [config Pattern] → (Either (Succeed (Seq Thing)) (Failure String))"
+
   dispatch)
 
 ;; Datastore API impl' multimethods - writing
