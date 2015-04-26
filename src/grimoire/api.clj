@@ -37,7 +37,7 @@
 (defmulti -read-example dispatch)
 (defmulti -search dispatch)
 
-;; Datastore API impl' multimethods - listing & reading
+;; Datastore API impl' multimethods - writing
 ;;--------------------------------------------------------------------
 (defmulti -write-meta dispatch)
 (defmulti -write-note dispatch)
