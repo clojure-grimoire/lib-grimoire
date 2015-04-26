@@ -23,7 +23,7 @@
 ;; Datastore API impl' multimethods - listing & reading
 ;;--------------------------------------------------------------------
 (defmulti -list-groups
-  "Implementation extension point of grimoire.api/list-groups. Listing APIs
+  "Implementation extension point of clj::grimoire.api/list-groups. Listing APIs
   must extend this multimethod.
 
   λ [config] → (Either (Succeed (Seq Group)) (Failure String))"
@@ -31,7 +31,7 @@
   dispatch)
 
 (defmulti -list-artifacts
-  "Implementation extension point of grimoire.api/list-artifacts. Listing APIs
+  "Implementation extension point of clj::grimoire.api/list-artifacts. Listing APIs
   must extend this multimethod.
 
   λ [config Group] → (Either (Succeed (Seq Artifact)) (Failure String))"
@@ -39,77 +39,77 @@
   dispatch)
 
 (defmulti -list-versions
-  "Implementation extension point of grimoire.api/list-versions. Listing APIs
+  "Implementation extension point of clj::grimoire.api/list-versions. Listing APIs
   must extend this multimethod.
 
   λ [config Artifact] → (Either (Succeed (Seq Version)) (Failure String))"
   dispatch)
 
 (defmulti -list-platforms
-  "Implementation extension point of grimoire.api/list-platforms. Listing APIs
+  "Implementation extension point of clj::grimoire.api/list-platforms. Listing APIs
   must extend this multimethod.
 
   λ [config Version] → (Either (Succeed (Seq Platform)) (Failure String))"
   dispatch)
 
 (defmulti -list-namespaces
-  "Implementation extension point of grimoire.api/list-namespaces. Listing APIs
+  "Implementation extension point of clj::grimoire.api/list-namespaces. Listing APIs
   must extend this multimethod.
 
   λ [config Platform] → (Either (Succeed (Seq Ns)) (Failure String))"
   dispatch)
 
 (defmulti -list-defs
-  "Implementation extension point of grimoire.api/list-defs. Listing APIs
+  "Implementation extension point of clj::grimoire.api/list-defs. Listing APIs
   must extend this multimethod.
 
   λ [config Ns] → (Either (Succeed (Seq Def)) (Failure String))"
   dispatch)
 
 (defmulti -list-notes
-  "Implementation extension point of grimoire.api/list-notes. Listing APIs
+  "Implementation extension point of clj::grimoire.api/list-notes. Listing APIs
   must extend this multimethod.
 
   λ [config Thing] → (Either (Succeed (Seq Note)) (Failure String))"
   dispatch)
 
 (defmulti -list-examples
-  "Implementation extension point of grimoire.api/list-examples. Listing APIs
+  "Implementation extension point of clj::grimoire.api/list-examples. Listing APIs
   must extend this multimethod.
 
   λ [config Thing] → (Either (Succeed (Seq Example)) (Failure String))"
   dispatch)
 
 (defmulti -list-related
-  "Implementation extension point of grimoire.api/list-related. Listing APIs
+  "Implementation extension point of clj::grimoire.api/list-related. Listing APIs
   must extend this multimethod.
 
   λ [config Thing] → (Either (Succeed (Seq Thing)) (Failure String))"
   dispatch)
 
 (defmulti -read-meta
-  "Implementation extension point of grimoire.api/read-meta. Listing APIs
+  "Implementation extension point of clj::grimoire.api/read-meta. Listing APIs
   must extend this multimethod.
 
   λ [config Thing] → (Either (Succeed Map) (Failure String))"
   dispatch)
 
 (defmulti -read-note
-  "Implementation extension point of grimoire.api/read-note. Listing APIs
+  "Implementation extension point of clj::grimoire.api/read-note. Listing APIs
   must extend this multimethod.
 
   λ [config Note] → (Either (Succeed String) (Failure String))"
   dispatch)
 
 (defmulti -read-example
-  "Implementation extension point of grimoire.api/read-example. Listing APIs
+  "Implementation extension point of clj::grimoire.api/read-example. Listing APIs
   must extend this multimethod.
 
   λ [config Artifact] → (Either (Succeed String) (Failure String))"
   dispatch)
 
 (defmulti -thing->prior-versions
-  "Implementation extension point of grimoire.api/thing->prior-versions. Listing
+  "Implementation extension point of clj::grimoire.api/thing->prior-versions. Listing
   APIs may implement this multimethod, however a default implementation in terms
   of the various listing operations.
 
@@ -117,9 +117,9 @@
   dispatch)
 
 (defmulti -search
-  "Implementation extension point of grimoire.api/search. Listing APIs may
+  "Implementation extension point of clj::grimoire.api/search. Listing APIs may
   implement this multimethod, however a default implementation in terms of the
-  various listing operations and clojure.core/for is provided.
+  various listing operations and clj::clojure.core/for is provided.
 
   λ [config Pattern] → (Either (Succeed (Seq Thing)) (Failure String))"
   dispatch)
@@ -420,8 +420,8 @@
       ?notes)))
 
 (defn- matches?
-  "Helper function to `search` which serves to determine whether some
-  \"pattern\" matches a given Thing.
+  "Helper function to clj::grimoire.api/search which serves to determine whether
+  a pattern matches a Thing.
 
   Supported patterns:
   - nil, matches anything
@@ -451,7 +451,8 @@
 
 (defn- downgrade
   "Helper to `search`. Returns the left-recursive subquery from a given
-  query. Used to implemenet `search` in terms of left recursive query descent."
+  query. Used to implement clj::grimoire.api/search in terms of left recursive
+  query descent."
   [pattern]
   (let [tm {:def      :ns
             :ns       :platform
@@ -567,7 +568,8 @@
 
 (defn resolve-short-string
   "Succeeds with a result Thing, mapping a short string as generated by
-  grimoire.things/thing->short-string back to a thing via grimoire.api/search."
+  clj::grimoire.things/thing->short-string back to a thing via
+  clj::grimoire.api/search."
   [config s]
   {:pre [(string? s)]}
   (if-let [res (t/parse-short-string s)]
