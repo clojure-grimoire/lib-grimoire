@@ -22,20 +22,107 @@
 
 ;; Datastore API impl' multimethods - listing & reading
 ;;--------------------------------------------------------------------
-(defmulti -list-groups dispatch)
-(defmulti -list-artifacts dispatch)
-(defmulti -list-versions dispatch)
-(defmulti -list-platforms dispatch)
-(defmulti -list-namespaces dispatch)
-(defmulti -list-defs dispatch)
-(defmulti -list-notes dispatch)
-(defmulti -list-examples dispatch)
-(defmulti -list-related dispatch)
+(defmulti -list-groups
+  "Implementation extension point of grimoire.api/list-groups. Listing APIs
+  must extend this multimethod.
 
-(defmulti -read-meta dispatch)
-(defmulti -read-note dispatch)
-(defmulti -read-example dispatch)
-(defmulti -search dispatch)
+  λ [config] → (Either (Succeed (Seq Group)) (Failure String))"
+
+  dispatch)
+
+(defmulti -list-artifacts
+  "Implementation extension point of grimoire.api/list-artifacts. Listing APIs
+  must extend this multimethod.
+
+  λ [config Group] → (Either (Succeed (Seq Artifact)) (Failure String))"
+  
+  dispatch)
+
+(defmulti -list-versions
+  "Implementation extension point of grimoire.api/list-versions. Listing APIs
+  must extend this multimethod.
+
+  λ [config Artifact] → (Either (Succeed (Seq Version)) (Failure String))"
+  dispatch)
+
+(defmulti -list-platforms
+  "Implementation extension point of grimoire.api/list-platforms. Listing APIs
+  must extend this multimethod.
+
+  λ [config Version] → (Either (Succeed (Seq Platform)) (Failure String))"
+  dispatch)
+
+(defmulti -list-namespaces
+  "Implementation extension point of grimoire.api/list-namespaces. Listing APIs
+  must extend this multimethod.
+
+  λ [config Platform] → (Either (Succeed (Seq Ns)) (Failure String))"
+  dispatch)
+
+(defmulti -list-defs
+  "Implementation extension point of grimoire.api/list-defs. Listing APIs
+  must extend this multimethod.
+
+  λ [config Ns] → (Either (Succeed (Seq Def)) (Failure String))"
+  dispatch)
+
+(defmulti -list-notes
+  "Implementation extension point of grimoire.api/list-notes. Listing APIs
+  must extend this multimethod.
+
+  λ [config Thing] → (Either (Succeed (Seq Note)) (Failure String))"
+  dispatch)
+
+(defmulti -list-examples
+  "Implementation extension point of grimoire.api/list-examples. Listing APIs
+  must extend this multimethod.
+
+  λ [config Thing] → (Either (Succeed (Seq Example)) (Failure String))"
+  dispatch)
+
+(defmulti -list-related
+  "Implementation extension point of grimoire.api/list-related. Listing APIs
+  must extend this multimethod.
+
+  λ [config Thing] → (Either (Succeed (Seq Thing)) (Failure String))"
+  dispatch)
+
+(defmulti -read-meta
+  "Implementation extension point of grimoire.api/read-meta. Listing APIs
+  must extend this multimethod.
+
+  λ [config Thing] → (Either (Succeed Map) (Failure String))"
+  dispatch)
+
+(defmulti -read-note
+  "Implementation extension point of grimoire.api/read-note. Listing APIs
+  must extend this multimethod.
+
+  λ [config Note] → (Either (Succeed String) (Failure String))"
+  dispatch)
+
+(defmulti -read-example
+  "Implementation extension point of grimoire.api/read-example. Listing APIs
+  must extend this multimethod.
+
+  λ [config Artifact] → (Either (Succeed String) (Failure String))"
+  dispatch)
+
+(defmulti -thing->prior-versions
+  "Implementation extension point of grimoire.api/thing->prior-versions. Listing
+  APIs may implement this multimethod, however a default implementation in terms
+  of the various listing operations.
+
+  λ [config Thing] → (Either (Succeed (Seq Thing)) (Failure String))"
+  dispatch)
+
+(defmulti -search
+  "Implementation extension point of grimoire.api/search. Listing APIs may
+  implement this multimethod, however a default implementation in terms of the
+  various listing operations and clojure.core/for is provided.
+
+  λ [config Pattern] → (Either (Succeed (Seq Thing)) (Failure String))"
+  dispatch)
 
 ;; Datastore API impl' multimethods - writing
 ;;--------------------------------------------------------------------
