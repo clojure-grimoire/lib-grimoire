@@ -479,8 +479,8 @@
   Examples:
   > [:def :any :any :any :any \"clojure.core\" \"concat\"]
 
-  Will match all instances of the Def clojure.core/concat in all artifacts on
-  all platforms in all versions in all artifacts in all groups.
+  Will match all instances of the Def clojure.core/concat on all platforms in
+  all versions in all artifacts in all groups.
 
   > [:ns :any \"clojure\" :any :any \"clojure.set\"]
 
