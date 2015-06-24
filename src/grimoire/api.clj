@@ -11,7 +11,7 @@
   (:require [grimoire.things :as t]
             [grimoire.util :as util]
             [grimoire.either :as e]
-            [detritus.variants :as v]
+            [guten-tag.core :as v]
             [clojure.core.match :refer [match]]
             [version-clj.core :as semver]))
 

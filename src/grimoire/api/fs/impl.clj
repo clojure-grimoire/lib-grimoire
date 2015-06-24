@@ -5,7 +5,6 @@
   (:require [grimoire.util :as util]
             [grimoire.things :as t]
             [grimoire.api.fs :refer [Config?]]
-            [detritus.variants :as v]
             [clojure.java.io :as io]))
 
 (defn file?

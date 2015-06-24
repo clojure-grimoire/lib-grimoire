@@ -1,5 +1,5 @@
 (ns grimoire.api.fs
-  (:require [detritus.variants :refer [deftag]]))
+  (:require [guten-tag.core :refer [deftag]]))
 
 (deftag Config
   "A configuration for the filesystem backend. Stores base paths for
