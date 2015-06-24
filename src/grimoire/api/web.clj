@@ -1,5 +1,5 @@
 (ns grimoire.api.web
-  (:require [detritus.variants :refer [deftag]]
+  (:require [guten-tag.core :refer [deftag]]
             [grimoire.things :as t]))
 
 (deftag Config

@@ -10,7 +10,6 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.edn :as edn]
-            [detritus.variants :as v]
             [version-clj.core :as semver]
             [cemerick.url :as url]))
 

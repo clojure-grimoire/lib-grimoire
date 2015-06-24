@@ -2,9 +2,9 @@
   "Quick and dirty implementation of something like Haskell's Either[Success,
   Failure] for Clojure. Not the nicest thing in the world, but it'll do the
   job. Used to indicate success and failure throughout the lib-grimoire API."
-  (:require [detritus.variants :as v]))
+  (:require [guten-tag.core :refer [deftag]]))
  
-(v/deftag Succeess
+(deftag Succeess
   "λ [t] → Success[t]
 
   ∀x (succeed? (succeed x)) == true
@@ -23,7 +23,7 @@
   {:pre [(succeed? x)]}
   (:result x))
 
-(v/deftag Failure
+(deftag Failure
   "λ [t] → Fail[x]
 
   Type constructor. Returns a pair [:fail x] for all x.
