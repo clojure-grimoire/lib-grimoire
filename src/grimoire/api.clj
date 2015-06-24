@@ -362,6 +362,8 @@
          (not (t/leaf? thing))]}
   (-thing->prior-versions config thing))
 
+(declare search)
+
 (defmethod -thing->prior-versions :default
   [config thing]
   (match thing
@@ -369,13 +371,16 @@
     ;;
     ;; (list all the versions using the API)
     ;;----------------------------------------
-    ([::t/version {:name n :parent artifact}] :seq)
-    ,,(list-versions config artifact)
+    ([::t/version {:name n
+                   :parent {:name aname
+                            :parent {:name gname}}}] :seq)
+    ,,(search config
+              [:version gname aname
+               #(->> %
+                     t/thing->name
+                     (semver/version-compare n)
+                     (<= 0))])
 
-    ;; Case of a Platform or Ns
-    ;;
-    ;; (return yourself re-rooted on each of the new parents)
-    ;;----------------------------------------
     ([(:or ::t/platform
            ::t/namespace)
       {:name n :parent p}] :seq)
@@ -392,25 +397,22 @@
     ;;
     ;; (filter out only the older versions)
     ;;----------------------------------------
-    ([::t/def {:name n :parent parent}] :seq)
-    (let [currentv  (t/thing->version thing)               ; version handle
-          current   (-> currentv :name util/normalize-version)
-          added     (-> (read-meta config thing)
-                        e/result
-                        (get :added "0.0.0")
-                        util/normalize-version)
-          ?versions (thing->prior-versions config parent)]
-      (if (e/succeed? ?versions)
-        (e/succeed
-         (for [other-p (e/result ?versions)
-               :let    [version-thing (t/thing->version other-p)
-                        version-str   (t/thing->name version-thing)]
-               :when (<= 0 (semver/version-compare version-str added))
-               :when (>= 0 (semver/version-compare version-str current))]
-           (-> thing
-               (assoc :parent other-p)
-               (dissoc ::t/url))))
-        ?versions))))
+    ([::t/def {:name n
+               :parent
+               {:name nsn
+                :parent
+                {:name pn
+                 :parent
+                 {:name vn
+                  :parent
+                  {:name an
+                   :parent
+                   {:name gn}}}}}}] :seq)
+    ,,(search config
+              [:def gn an #(->> % t/thing->name
+                                (semver/version-compare vn)
+                                (<= 0))
+               pn nsn n])))
 
 (defn read-notes
   "Succeeds with a result Seq[Version, string], being the zip of list-notes with
@@ -510,51 +512,74 @@
             :platform :version
             :version  :artifact
             :artifact :group}]
-    (cons (tm (first pattern))
-          (rest (butlast pattern)))))
+    (vec (cons (tm (first pattern))
+                (rest (butlast pattern))))))
+
+(defn- forge
+  [pattern]
+  (match (first pattern)
+    :def      t/->Def
+    :ns       t/->Ns
+    :platform t/->Platform
+    :version  t/->Version
+    :artifact t/->Artifact
+    :group    #(t/->Group %2)))
 
 (defn- recur-and-filter [cfg pattern el list-fn]
   (let [?subterms (-search cfg (downgrade pattern))]
     (if (e/succeed? ?subterms)
-      (e/succeed
-       (for [r     (e/result ?subterms)
-             ir    (e/result (list-fn cfg r))
-             :when (matches? el ir)]
-         ir))
+      (let [results (e/result ?subterms)]
+        (->> (cond (set? el)
+                   ,,(let [ctor (forge pattern)]
+                       (for [r results
+                             e el]
+                         (ctor r e)))
+                   
+                   (string? el)
+                   ,,(let [ctor (forge pattern)]
+                       (map #(ctor % el) results))
+
+                   :else
+                   ,,(for [r     results
+                           ir    (e/result (list-fn cfg r))
+                           :when (matches? el ir)]
+                       ir))
+             (filter #(e/succeed? (read-meta cfg %)))
+             (e/succeed)))
       ?subterms)))
 
 ;; Default naive implementation of searching as above
 (defmethod -search :default [config pattern]
   (let [f (partial recur-and-filter config pattern)]
-    (match [pattern]
+    (match pattern
       ;; Case of a def
       ;;----------------------------------------
-      [([:def gid art v plat ns name] :seq)]
+      [:def gid art v plat ns name]
       ,,(f name list-defs)
 
       ;; Case of a ns
       ;;----------------------------------------
-      [([:ns gid art v plat ns] :seq)]
+      [:ns gid art v plat ns]
       ,,(f ns list-namespaces)
 
       ;; Case of a platform
       ;;----------------------------------------
-      [([:platform gid art v plat] :seq)]
+      [:platform gid art v plat]
       ,,(f plat list-platforms)
       
       ;; Case of a version
       ;;----------------------------------------
-      [([:version gid art v] :seq)]
+      [:version gid art v]
       ,,(f v list-versions)
       
       ;; Case of an artifact
       ;;----------------------------------------
-      [([:artifact gid art] :seq)]
+      [:artifact gid art]
       ,,(f art list-artifacts)
 
       ;; Case of a group
       ;;----------------------------------------
-      [([:group gid] :seq)]
+      [:group gid]
       ,,(e/succeed
          (for [cg    (e/result (list-groups config))
                :when (matches? gid cg)]
