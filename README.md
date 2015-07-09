@@ -302,6 +302,12 @@ Note that they are heavily used within Grimoire as of 0.4.12 for exactly this re
 
 ## Changelog
 
+**0.10.\***:
+- Dropped the dependency on version-clj to resolve sorting issues with build qualifiers.
+- Upgraded to guten-tag 0.1.4
+- Deleted `grimoire.things/thing->relative-path`, depended on guten-tag < 1.3, not used.
+- Deleted `grimoire.things/thing->root-to`, depended on guten-tag < 1.3, not used.
+
 **0.9.\***:
 - Added `grimoire.things/thing->url-path` for cases when Things must be URL or path safe.
 - Added `grimoire.things/url-path->thing` to complement `grimoire.things/thing->url-path`.

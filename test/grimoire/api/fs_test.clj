@@ -5,6 +5,7 @@
             [grimoire.api.fs :refer [->Config]]
             [grimoire.api.fs.read]
             [grimoire.api.fs.write]
+            [grimoire.util :as util]
             [clojure.test :refer :all]))
 
 (def test-config
@@ -71,6 +72,14 @@
    "org.bar/b/1.0.0/clj"
    "org.bar/b/1.0.0/clj/not-qux"
    "org.bar/b/1.0.0/clj/not-qux/c"
+
+   "org.clojure"
+   "org.clojure/clojure"
+   "org.clojure/clojure/1.6.0"
+   "org.clojure/clojure/1.7.0"
+   "org.clojure/clojure/1.7.0-rc3"
+   "org.clojure/clojure/1.7.0-alpha1"
+   "org.clojure/clojure/1.7.0-beta2"
    ])
 
 (doseq [uri test-resources]
@@ -87,7 +96,7 @@
         sgroups (-> test-config
                     (api/search [:group nil])
                     result)]
-    (is (= ["org.bar" "org.foo"]
+    (is (= ["org.bar" "org.clojure" "org.foo"]
            (sort (map t/thing->name groups))
            (sort (map t/thing->name sgroups))))))
 
@@ -160,6 +169,16 @@
             "org.foo/a/1.0.1/clj/a.core"
             "org.foo/a/1.1.0/clj/a.core"]
            (sort (mapv t/thing->path versions))))))
+
+(deftest list-versions-test
+  (let [art      (-> (t/->Group "org.clojure")
+                     (t/->Artifact "clojure"))
+        versions (-> test-config
+                     (api/list-versions art)
+                     result)]
+    (is (= versions
+           (sort-by (comp util/clojure-version->cmp-key t/thing->name)
+                    versions)))))
 
 (deftest list-def-test
   (let [ns    (-> (t/->Group "org.foo")

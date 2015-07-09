@@ -96,10 +96,6 @@
      (t/thing->artifact
       (t/thing->group t)))))
 
-(deftest thing->root-to-tests
-  (is (= (t/thing->path (t/thing->platform t))
-         (t/thing->root-to t/platform t))))
-
 (deftest ensure-thing-tests
   (is (= t (t/ensure-thing (t/thing->path t))))
   (is (= t (t/ensure-thing t)))
