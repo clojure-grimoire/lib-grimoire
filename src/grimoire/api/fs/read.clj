@@ -52,6 +52,7 @@
                  :when (.isDirectory d)]
              (t/->Version artifact (f->name d)))
            (sort-by (comp util/clojure-version->cmp-key t/thing->name))
+           reverse
            succeed)
       (fail (str "No such artifact "
                  (t/thing->path thing))))))
