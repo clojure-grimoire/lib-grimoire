@@ -3,14 +3,14 @@
   (:refer-clojure :exclude [isa?])
   (:require [grimoire.things :as t]
             [grimoire.api :as api]
-            [grimoire.util :refer [normalize-version]]
+            [grimoire.util :as util
+             :refer [normalize-version]]
             [grimoire.either :refer [succeed result fail succeed?]]
             [grimoire.api.fs :as fs]
             [grimoire.api.fs.impl :as impl]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.edn :as edn]
-            [version-clj.core :as semver]
             [cemerick.url :as url]))
 
 (defn- f->name [^java.io.File f]
@@ -51,8 +51,7 @@
       (->> (for [d     (reverse (sort (.listFiles handle)))
                  :when (.isDirectory d)]
              (t/->Version artifact (f->name d)))
-           (sort-by t/thing->name)
-           reverse
+           (sort-by (comp util/clojure-version->cmp-key t/thing->name))
            succeed)
       (fail (str "No such artifact "
                  (t/thing->path thing))))))

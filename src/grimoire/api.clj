@@ -12,8 +12,7 @@
             [grimoire.util :as util]
             [grimoire.either :as e]
             [guten-tag.core :as v]
-            [clojure.core.match :refer [match]]
-            [version-clj.core :as semver]))
+            [clojure.core.match :refer [match]]))
 
 (defn dispatch
   "Common dispatch function for all the API multimethods."
@@ -364,6 +363,13 @@
 
 (declare search)
 
+(def -compare-to-version
+  (fn [n]
+    (fn [%]
+      (let [lhs (util/clojure-version->cmp-key n)
+            rhs (-> % t/thing->name util/clojure-version->cmp-key)]
+        (<= 0 (compare lhs rhs))))))
+
 (defmethod -thing->prior-versions :default
   [config thing]
   (match thing
@@ -376,10 +382,7 @@
                             :parent {:name gname}}}] :seq)
     ,,(search config
               [:version gname aname
-               #(->> %
-                     t/thing->name
-                     (semver/version-compare n)
-                     (<= 0))])
+               (-compare-to-version n)])
 
     ([(:or ::t/platform
            ::t/namespace)
@@ -409,9 +412,7 @@
                    :parent
                    {:name gn}}}}}}] :seq)
     ,,(search config
-              [:def gn an #(->> % t/thing->name
-                                (semver/version-compare vn)
-                                (<= 0))
+              [:def gn an (-compare-to-version vn)
                pn nsn n])))
 
 (defn read-notes

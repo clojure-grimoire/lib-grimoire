@@ -51,3 +51,35 @@
   (comp #(get -abbrevs %1 %1)
         #(.toLowerCase %)
         name))
+
+(defn clojure-version->cmp-key
+  "Create a comparison key from a Clojure version string, as returned
+  from function clojure.core/clojure-version.  The key is a vector of
+  integers and strings, and two such keys may be compared via
+  clojure.core/compare to get the correct relative order of the two
+  Clojure versions.
+
+  Makes simplifying assumption that:
+  x.y.z-alpha<n> < x.y.z-beta<m> < x.y.z-RC<p> < x.y.z.
+
+  Note that this was not the time order of release for some 1.5.0-beta
+  and 1.5.0-RC releases, historically, as they switched from 1.5.0-RC
+  releases back to 1.5.0-beta, and then back to 1.5.0-RC again.
+  Hopefully that will not happen again.
+
+  Stolen from AndyF with thanks."
+  [version-str]
+  (let [to-long         (fn [^String s] (Long/parseLong s))
+        [major minor x] (str/split version-str #"\." -1)
+        [incremental x] (str/split x #"-" -1)
+        ;; qual1 will be one of "alpha" "beta" "rc", or "zfinal" if
+        ;; version-str is of the form "x.y.z".  It will always be
+        ;; lower case so that normal alphabetic order comparison is
+        ;; used, without weirdness of upper case letters being sorted
+        ;; earlier than lower case letters.
+        [qual1 qual2]   (if x
+                          (if-let [[_ a b] (re-matches #"^(?i)(alpha|beta|rc)(\d+)$" x)]
+                            [(str/lower-case a) (to-long b)]
+                            [x nil])
+                          ["zfinal" nil])]
+    [(to-long major) (to-long minor) (to-long incremental) qual1 qual2]))
