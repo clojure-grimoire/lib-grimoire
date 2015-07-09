@@ -46,12 +46,13 @@ user> (require '[grimoire.things :as t])
 nil
 user> (-> (t/->Group "org.clojure")
            (t/->Artifact "clojure"))
-〈:grimoire.things/artifact
- {:parent 〈:grimoire.things/group
-           {:name "org.clojure",
-            :grimoire.things/url "org.clojure"}),
-  :name "clojure",
-  :grimoire.things/url "org.clojure/clojure"}〉
+#g/t [:grimoire.things/artifact
+      {:parent
+       #g/t [:grimoire.things/group
+             {:name "org.clojure",
+              :grimoire.things/url "org.clojure"}),
+       :name "clojure",
+       :grimoire.things/url "org.clojure/clojure"}]
 user> (map t/thing->name (result (api/list-versions config *1)))
 ("1.7.0-alpha4" "1.7.0-alpha3" "1.7.0-alpha2" "1.7.0-alpha1" "1.6.0" "1.5.0" "1.4.0")
 ```
@@ -62,15 +63,17 @@ Nodes in this graph may be arbitrarily reconstructed from URI strings via `grimo
 
 ```Clojure
 user> (t/path->thing "org.clojure-grimoire/lib-grimoire/0.8.2")
-〈:grimoire.things/version
- {:parent
-  〈:grimoire.things/artifact
-   {:parent
-    〈:grimoire.things/group {:name "org.clojure-grimoire", :grimoire.things/url "org.clojure-grimoire"}),
-    :name "lib-grimoire",
-    :grimoire.things/url "org.clojure-grimoire/lib-grimoire"}〉,
-  :name "0.8.2",
-  :grimoire.things/url "org.clojure-grimoire/lib-grimoire/0.8.2"}〉
+#g/t [:grimoire.things/version
+      {:parent
+       #g/t [:grimoire.things/artifact
+             {:parent
+              #g/t [:grimoire.things/group
+                    {:name "org.clojure-grimoire",
+                    :grimoire.things/url "org.clojure-grimoire"}),
+              :name "lib-grimoire",
+              :grimoire.things/url "org.clojure-grimoire/lib-grimoire"}],
+            :name "0.8.2",
+            :grimoire.things/url "org.clojure-grimoire/lib-grimoire/0.8.2"}]
 ```
 
 Note that doing so is _not_ generally type safe and is thus to be avoided unless you have good reason for doing so such as comparative efficiency of doing a lookup.
@@ -82,11 +85,13 @@ Using the same REPL from last time,
 
 ```Clojure
 user> (t/thing->parent *1)
-〈:grimoire.things/artifact
- {:parent
-  〈:grimoire.things/group {:name "org.clojure-grimoire", :grimoire.things/url "org.clojure-grimoire"}〉,
-  :name "lib-grimoire",
-  :grimoire.things/url "org.clojure-grimoire/lib-grimoire"}〉
+#g/t [:grimoire.things/artifact
+      {:parent
+       #g/t [:grimoire.things/group
+             {:name "org.clojure-grimoire",
+              :grimoire.things/url "org.clojure-grimoire"}],
+       :name "lib-grimoire",
+       :grimoire.things/url "org.clojure-grimoire/lib-grimoire"}]
 ```
 
 Every `Thing` can have attached metadata.
@@ -141,11 +146,13 @@ This back end uses a configuration value as such:
 ```Clojure
 => (require '[grimoire.api.fs :refer [->Config]])
 nil
-=> (->Config "resources/test/docs/" "resources/test/notes/" "resources/test/examples/")
-〈:grimoire.api.fs/Config
- {:docs     "resources/test/docs/",
-  :notes    "resources/test/notes/",
-  :examples "resources/test/examples/"}〉
+=> (->Config "resources/test/docs/"
+             "resources/test/notes/"
+             "resources/test/examples/")
+#g/t [:grimoire.api.fs/Config
+      {:docs     "resources/test/docs/",
+       :notes    "resources/test/notes/",
+       :examples "resources/test/examples/"}]
 ```
 
 In the context of a configured Grimoire instance, the following would work:
@@ -154,35 +161,45 @@ In the context of a configured Grimoire instance, the following would work:
 
 ```Clojure
 grimoire.web.views> (lib-grim-config)
-〈:grimoire.api.fs/Config {:docs "doc-store", :examples "notes-store", :notes "notes-store"}〉
+#g/t [:grimoire.api.fs/Config
+      {:docs "doc-store", :examples "notes-store", :notes "notes-store"}]
+
 grimoire.web.views> (result (api/list-groups (lib-grim-config)))
-(〈:grimoire.things/group {:name "org.clojure", :grimoire.things/url "org.clojure"}〉
- 〈:grimoire.things/group {:name "org.clojure-grimoire", :grimoire.things/url "org.clojure-grimoire"}〉)
+(#g/t [:grimoire.things/group {:name "org.clojure", :grimoire.things/url "org.clojure"}]
+ #g/t [:grimoire.things/group {:name "org.clojure-grimoire", :grimoire.things/url "org.clojure-grimoire"}])
+
 grimoire.web.views> (result (api/list-artifacts (lib-grim-config) (second *1)))
-(〈:grimoire.things/artifact
-  {:parent
-   〈:grimoire.things/group {:name "org.clojure-grimoire", :grimoire.things/url "org.clojure-grimoire"}〉,
-   :name "lib-grimoire",
-   :grimoire.things/url "org.clojure-grimoire/lib-grimoire"})〉)
+(#g/t [:grimoire.things/artifact
+       {:parent
+        #g/t [:grimoire.things/group
+              {:name "org.clojure-grimoire",
+              :grimoire.things/url "org.clojure-grimoire"}],
+        :name "lib-grimoire",
+        :grimoire.things/url "org.clojure-grimoire/lib-grimoire"})])
+
 grimoire.web.views> (result (api/list-versions (lib-grim-config) (first *1)))
-(〈:grimoire.things/version
-  {:parent
-   〈:grimoire.things/artifact
-    {:parent
-     〈:grimoire.things/group {:name "org.clojure-grimoire", :grimoire.things/url "org.clojure-grimoire"}〉,
-     :name "lib-grimoire",
-     :grimoire.things/url "org.clojure-grimoire/lib-grimoire"}〉,
-     :name "0.6.4",
-     :grimoire.things/url "org.clojure-grimoire/lib-grimoire/0.6.4"}〉
- 〈:grimoire.things/version
-  {:parent
-   〈:grimoire.things/artifact
-    {:parent
-	 〈:grimoire.things/group {:name "org.clojure-grimoire", :grimoire.things/url "org.clojure-grimoire"}〉,
-      :name "lib-grimoire",
-      :grimoire.things/url "org.clojure-grimoire/lib-grimoire"}〉,
-   :name "0.6.3",
-   :grimoire.things/url "org.clojure-grimoire/lib-grimoire/0.6.3"}〉)
+(#g/t [:grimoire.things/version
+       {:parent
+        #g/t [:grimoire.things/artifact
+              {:parent
+               #g/t [:grimoire.things/group
+                     {:name "org.clojure-grimoire",
+                      :grimoire.things/url "org.clojure-grimoire"}],
+               :name "lib-grimoire",
+               :grimoire.things/url "org.clojure-grimoire/lib-grimoire"}],
+               :name "0.6.4",
+               :grimoire.things/url "org.clojure-grimoire/lib-grimoire/0.6.4"}]
+      #g/t [:grimoire.things/version
+            {:parent
+             #g/t [:grimoire.things/artifact
+                   {:parent
+                     #g/t [:grimoire.things/group
+                           {:name "org.clojure-grimoire",
+                           :grimoire.things/url "org.clojure-grimoire"}],
+                     :name "lib-grimoire",
+                     :grimoire.things/url "org.clojure-grimoire/lib-grimoire"}],
+             :name "0.6.3",
+             :grimoire.things/url "org.clojure-grimoire/lib-grimoire/0.6.3"}])
 ```
 
 Another cool feature of the Grimoire API is that it features a crude (and very alpha) searching engine.
@@ -209,7 +226,7 @@ And having N terms where N is the number of URL path elements for a Thing of the
 ;; Find the Clojure/Core group via search
 grimoire.web.views> (api/search (lib-grim-config)
                                 [:group "org.clojure"])
-〈:grimoire.either/Succeess {:result (〈:grimoire.things/group {:name "org.clojure", :grimoire.things/url "org.clojure"}〉)}〉
+#g/t [:grimoire.either/Succeess {:result (#g/t [:grimoire.things/group {:name "org.clojure", :grimoire.things/url "org.clojure"}])}]
 
 ;; How many defs are in Clojure 1.6?
 grimoire.web.views> (count (result (api/search (lib-grim-config) [:def nil nil "1.6.0" nil nil nil])))
@@ -243,8 +260,8 @@ This back end uses a configuration map as such:
 user> (require '[grimoire.api.web :refer [->Config]])
 nil
 user> (->Config "http://127.0.0.1:3000")
-〈:grimoire.api.fs/Config
- {:host "http://127.0.0.1:3000"}〉
+#g/t [:grimoire.api.fs/Config
+ {:host "http://127.0.0.1:3000"}]
 ```
 
 `:host` is expected to be the Grimoire base URL, but is variable and can be pointed anywhere.
@@ -258,17 +275,17 @@ So if you wanted to use the live Grimoire site as a data source for instance:
 
 ```Clojure
 user> (grimoire.api.web/->Config "http://conj.io")
-〈:grimoire.api.web/Config
- {:host "http://conj.io"}〉
+#g/t [:grimoire.api.web/Config
+      {:host "http://conj.io"}]
 user> (api/list-groups *1)
-〈:grimoire.either/Succeess
- {:result
-  (〈:grimoire.things/group
-    {:name "org.clojure",
-     :grimoire.things/url "org.clojure"}〉
-   〈:grimoire.things/group
-    {:name "org.clojure-grimoire",
-     :grimoire.things/url "org.clojure-grimoire"}〉)}〉
+#g/t [:grimoire.either/Succeess
+      {:result
+       (#g/t [:grimoire.things/group
+              {:name "org.clojure",
+               :grimoire.things/url "org.clojure"}]
+        #g/t [:grimoire.things/group
+              {:name "org.clojure-grimoire",
+               :grimoire.things/url "org.clojure-grimoire"}])}]
 ```
 
 If you want to forge links to Grimoire documentation, or for an API request against a Grimoire instance, then the functions `grimoire.api.web/make-html-url` and `grimoire.api.web/make-api-url` are your friends.
@@ -277,8 +294,8 @@ If you want to forge links to Grimoire documentation, or for an API request agai
 
 ```Clojure
 user> (grimoire.api.web/->Config "http://conj.io")
-〈:grimoire.api.web/Config
- {:host "http://conj.io"}〉
+#g/t [:grimoire.api.web/Config
+      {:host "http://conj.io"}]
 
 ;; Forge a html link to the documentation of the org.clojure-grimoire group
 user> (->> (grimoire.api/list-groups *1)
@@ -307,6 +324,7 @@ Note that they are heavily used within Grimoire as of 0.4.12 for exactly this re
 - Upgraded to guten-tag 0.1.4
 - Deleted `grimoire.things/thing->relative-path`, depended on guten-tag < 1.3, not used.
 - Deleted `grimoire.things/thing->root-to`, depended on guten-tag < 1.3, not used.
+- Broke and fixed the version sorting order on `grimoire.api/list-versions`
 
 **0.9.\***:
 - Added `grimoire.things/thing->url-path` for cases when Things must be URL or path safe.

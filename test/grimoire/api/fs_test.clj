@@ -177,8 +177,9 @@
                      (api/list-versions art)
                      result)]
     (is (= versions
-           (sort-by (comp util/clojure-version->cmp-key t/thing->name)
-                    versions)))))
+           (->> versions
+                (sort-by (comp util/clojure-version->cmp-key t/thing->name))
+                reverse)))))
 
 (deftest list-def-test
   (let [ns    (-> (t/->Group "org.foo")
