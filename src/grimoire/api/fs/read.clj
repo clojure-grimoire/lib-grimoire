@@ -23,7 +23,8 @@
     (if (.isDirectory handle)
       (succeed
        (for [d     (.listFiles handle)
-             :when (.isDirectory d)]
+             :when (.isDirectory d)
+             :when (.exists (io/file d "meta.edn"))]
          (t/->Group (url/url-decode (f->name d)))))
       (fail "Could not find store directory"))))
 
