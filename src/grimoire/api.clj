@@ -249,10 +249,11 @@
   (-list-examples config def-thing))
 
 (defn read-example
-  "Succeeds with a result Seq[Tuple[version, example-text]] for all examples on
-  prior or equal versions of the given thing sorted in decending version order.
+  "Succeeds with a result String being the text of an example read as identified
+  by a given examples handle.
 
-  Fails if the given Def does not exist, or if a nested Failure is encountered.
+  Will Fail if the given Example Thing does not exist, or if a nested Failure is
+  encountered.
 
   Note that future versions of this API may extend examples to Namespaces and
   Versions."
