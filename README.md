@@ -1,6 +1,7 @@
-[![Gittip button](http://img.shields.io/gittip/arrdem.svg)](https://www.gittip.com/arrdem/ "Support this project")
 
 # Lib-Grimoire
+
+[Support this project](https://www.patreon.com/arrdem)
 
 A small library for sharing code between [grimoire](https://github.com/clojure-grimoire/grimoire) and [lein-grim](https://github.com/clojure-grimoire/lein-grim) as well as other project interested in interacting with the Grimoire datastore or simply storing and retrieving Clojure source metadata.
 lib-grimoire privides a shared abstraction of a Clojure Maven entity and a set of operations on various backends for reading and writing data using these entities.
