@@ -308,7 +308,7 @@
   - :column   -> integer being colunm number
   - :line     -> integer being line number
   - :file     -> string being file name
-  - :redirect -> string being symbol name for implementing macro. only for {:type :sentinel}
+  - :target   -> string being symbol name for implementing macro. only for {:type :sentinel}
   - :type     -> one of #{:macro :fn :var :special :sentinel}
 
   Expected keys for namespaces:
