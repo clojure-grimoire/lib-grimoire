@@ -392,7 +392,6 @@
   (let [[_ scheme type _ extension path
          :as groups] (re-find full-uri-pattern uri-string)]
     (assert groups "Failed to parse URI. No regex match!")
-    (println groups)
     (let [t (url-path->thing path)]
       (assert (= (thing->type-name t) type)
               "Failed to parse URI. Path didn't round trip to expected type!")
