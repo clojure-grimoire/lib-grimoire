@@ -10,9 +10,10 @@
             [grimoire.api.fs.impl :as impl]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [cemerick.url :as url]))
+            [cemerick.url :as url])
+  (:import [java.io File]))
 
-(defn- f->name [^java.io.File f]
+(defn- f->name [^File f]
   (url/url-decode (.getName f)))
 
 ;; List things
@@ -121,7 +122,7 @@
           ;; versions is a Fail, pass it down
           versions))
 
-      (let [^java.io.File h (impl/thing->notes-handle config thing)]
+      (let [^File h (impl/thing->notes-handle config thing)]
         (if (.exists h)
           (let [rhs (.toPath h)
                 p   (.relativize lhs rhs)]
