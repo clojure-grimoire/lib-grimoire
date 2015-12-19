@@ -11,5 +11,5 @@
                  [com.cemerick/url "0.1.1"
                   :exclusions [com.cemerick/clojurescript.test
                                org.clojure/clojure]]]
-  :profiles {:dev {:dependencies [[org.clojure/test.check "0.6.1"
+  :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"
                                    :exclusions [org.clojure/clojure]]]}})
