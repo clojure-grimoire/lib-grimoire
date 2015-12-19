@@ -141,7 +141,8 @@
              :let        [v (t/thing->name (t/thing->version prior-thing))
                           h (impl/thing->handle config :examples prior-thing)]
              ex          (.listFiles h)
-             :when       (.isFile ex)]
+             :when       (.isFile ex)
+             :when       (not (.startsWith (.getName ex) "."))]
          (let [rhs (.toPath ex)
                p   (.relativize lhs rhs)]
            (-> thing
