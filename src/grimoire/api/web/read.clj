@@ -16,8 +16,7 @@
             [grimoire.util :as u]
             [grimoire.either :refer [with-result succeed? result succeed fail either?]]
             [grimoire.things :as t]
-            [grimoire.api.web :as web]
-            [clojure.edn :as edn]))
+            [grimoire.api.web :as web]))
 
 ;; Interacting with the datastore - reading
 ;;--------------------------------------------------------------------
@@ -44,7 +43,7 @@
   [config thing op]
   {:post [(either? %)]}
   (let [res-string (web/make-api-url config thing op)
-        ?res       (-> res-string slurp edn/read-string)]
+        ?res       (-> res-string slurp u/edn-read-string-with-readers)]
     ((if (grim-succeed? ?res)
        succeed fail)
      (grim-result ?res))))

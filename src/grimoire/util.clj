@@ -3,6 +3,7 @@
   operations."
   (:refer-clojure :exclude [munge])
   (:require [clojure.string :as str]
+            [clojure.edn :as edn]
             [cemerick.url :refer [url-encode]]))
 
 (defn munge
@@ -83,3 +84,13 @@
                             [x nil])
                           ["zfinal" nil])]
     [(to-long major) (to-long minor) (to-long incremental) qual1 qual2]))
+
+(defn edn-read-string-with-readers
+  "Read a string with clojure.edn/read-string and additional reader functions
+  installed.
+
+  Currently the only additional reader function is the default reader function,
+  which will return a tuple [:cant-read <tag symbol> <raw value>]."
+  [s]
+  (edn/read-string {:default (fn [t v] [:cant-read t v])}
+                   s))

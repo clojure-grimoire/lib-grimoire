@@ -10,10 +10,10 @@
             [grimoire.api.fs.impl :as impl]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [clojure.edn :as edn]
-            [cemerick.url :as url]))
+            [cemerick.url :as url])
+  (:import [java.io File]))
 
-(defn- f->name [^java.io.File f]
+(defn- f->name [^File f]
   (url/url-decode (.getName f)))
 
 ;; List things
@@ -23,7 +23,8 @@
     (if (.isDirectory handle)
       (succeed
        (for [d     (.listFiles handle)
-             :when (.isDirectory d)]
+             :when (.isDirectory d)
+             :when (.exists (io/file d "meta.edn"))]
          (t/->Group (url/url-decode (f->name d)))))
       (fail "Could not find store directory"))))
 
@@ -121,7 +122,7 @@
           ;; versions is a Fail, pass it down
           versions))
 
-      (let [^java.io.File h (impl/thing->notes-handle config thing)]
+      (let [^File h (impl/thing->notes-handle config thing)]
         (if (.exists h)
           (let [rhs (.toPath h)
                 p   (.relativize lhs rhs)]
@@ -140,7 +141,8 @@
              :let        [v (t/thing->name (t/thing->version prior-thing))
                           h (impl/thing->handle config :examples prior-thing)]
              ex          (.listFiles h)
-             :when       (.isFile ex)]
+             :when       (.isFile ex)
+             :when       (not (.startsWith (.getName ex) "."))]
          (let [rhs (.toPath ex)
                p   (.relativize lhs rhs)]
            (-> thing
@@ -177,7 +179,7 @@
       (-> handle
           slurp
           (string/replace #"#<.*?>" "nil") ;; FIXME: Hack to ignore unreadable #<>s
-          edn/read-string
+          util/edn-read-string-with-readers
           succeed)
       (fail (str "No meta for object "
                  (t/thing->path thing))))))
