@@ -452,6 +452,7 @@
   - Strings as a term match any Thing with an equal Name
   - Regexps as a Term match any Thing with a matching Name
   - Fns as a term match any Thing such that (f T) is truthy
+  - :latest is a speciao Version which matches only the latest one
 
   Examples:
   > [:def :any :any :any :any \"clojure.core\" \"concat\"]
@@ -540,6 +541,11 @@
                    (string? el)
                    ,,(let [ctor (forge pattern)]
                        (map #(ctor % el) results))
+
+                   (and (= el :latest)
+                        (= list-fn list-versions))
+                   ,,(for [r results]
+                       (first (e/result (list-fn cfg r))))
 
                    :else
                    ,,(for [r     results
