@@ -365,7 +365,8 @@
     [([::version   {}] :seq)] "version"
     [([::platform  {}] :seq)] "platform"
     [([::namespace {}] :seq)] "namespace"
-    [([::def       {}] :seq)] "def"))
+    [([::def       {}] :seq)] "def"
+    [([::example   {}] :seq)] "ex"))
 
 (defn thing->full-uri
   "Function from a Thing to a String representing a unique Thing naming URI.
