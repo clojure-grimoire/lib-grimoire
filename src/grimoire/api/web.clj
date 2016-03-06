@@ -9,6 +9,17 @@
 
 (def api-base-str "/api/v2/")
 
+(def normalize-type
+  {:json              "json"
+   "json"             "json"
+   :application/json  "json"
+   "application/json" "json"
+
+   :edn               "edn"
+   "edn"              "edn"
+   :application/edn   "edn"
+   "application/edn"  "edn"})
+
 (defn make-api-url
   "λ [Cfg, Thing, Op] → String
 
@@ -21,7 +32,10 @@
   (str (:host config)
        api-base-str
        (when thing (t/thing->url-path thing))
-       "?op=" op "&type=edn"))
+       "?op=" op
+       (when-let [type (:type config :edn)]
+         (when-let [t' (normalize-type type)]
+           (str "&type=" t')))))
 
 (def store-base-str "/store/v1/")
 
