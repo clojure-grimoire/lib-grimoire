@@ -88,8 +88,9 @@
     (doseq [ns (result ?nss)]
       (is (t/namespace? ns))
       (is (succeed? (api/read-meta test-config ns)))
-      
+
       (let [?defs (api/list-defs test-config ns)]
         (is (succeed? ?defs))
         (doseq [d (result ?defs)]
-          (is (succeed? (api/read-meta test-config d))))))))
+          (testing (format "Trying to read metadata for def \"%s\"" (:name d))
+            (is (succeed? (api/read-meta test-config d)))))))))

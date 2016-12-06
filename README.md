@@ -325,7 +325,9 @@ Note that they are heavily used within Grimoire as of 0.4.12 for exactly this re
 - Upgraded to guten-tag 0.1.4
 - Deleted `grimoire.things/thing->relative-path`, depended on guten-tag < 1.3, not used.
 - Deleted `grimoire.things/thing->root-to`, depended on guten-tag < 1.3, not used.
-- Broke and fixed the version sorting order on `grimoire.api/list-versions`
+- Broke and fixed the version sorting order on `grimoire.api/list-versions`.
+- Added support for `_DOT_` and `_SLASH_` munging.
+- Fixed [#26](https://github.com/clojure-grimoire/lib-grimoire/issues/26).
 
 **0.9.\***:
 - Added `grimoire.things/thing->url-path` for cases when Things must be URL or path safe.

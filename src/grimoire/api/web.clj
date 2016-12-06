@@ -1,6 +1,7 @@
 (ns grimoire.api.web
   (:require [guten-tag.core :refer [deftag]]
-            [grimoire.things :as t]))
+            [grimoire.things :as t]
+            [grimoire.util :as util]))
 
 (deftag Config
   "A configuration for the web backend. Stores the base URL for the
@@ -31,7 +32,7 @@
          (string? op)]}
   (str (:host config)
        api-base-str
-       (when thing (t/thing->url-path thing))
+       (when thing (t/thing->url-path thing util/url-munge))
        "?op=" op
        (when-let [type (:type config :edn)]
          (when-let [t' (normalize-type type)]
@@ -50,4 +51,4 @@
              (nil? thing))]}
   (str (:host config)
        store-base-str
-       (when thing (t/thing->url-path thing))))
+       (when thing (t/thing->url-path thing util/url-munge))))

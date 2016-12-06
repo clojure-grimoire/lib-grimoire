@@ -330,17 +330,19 @@
 
 (defn thing->url-path
   "Function from a Thing to a munged and URL safe Thing path"
-  [t]
-  {:pre [(thing? t)]}
-  (match [t]
-    [([::def   {:name n :parent p}] :seq)]
-    ,,(str (thing->url-path p) "/" (u/munge n))
+  ([t]
+   (thing->url-path t u/munge))
+  ([t munge-fn]
+   {:pre [(thing? t)]}
+   (match [t]
+     [([::def   {:name n :parent p}] :seq)]
+     ,,(str (thing->url-path p) "/" (munge-fn n))
 
-    [([::group {:name n}] :seq)]
-    ,,n
+     [([::group {:name n}] :seq)]
+     ,,n
 
-    [([_       {:name n :parent p}] :seq)]
-    ,,(str (thing->url-path p) "/" n)))
+     [([_       {:name n :parent p}] :seq)]
+     ,,(str (thing->url-path p) "/" n))))
 
 ;; FIXME: this function could probably be a little more principled,
 ;; but so be it.
@@ -351,7 +353,7 @@
         path-elems (if (<= 6 (count path-elems))
                      (concat
                       (take 5 path-elems)
-                      [(url/url-decode (nth path-elems 5))]
+                      [(u/unmunge (nth path-elems 5))]
                       (drop 6 path-elems))
                      path-elems)]
     (path->thing (string/join "/" path-elems))))
@@ -403,7 +405,7 @@
 
 (defn thing->short-string
   "Function from a Thing to a String representing a mostly unique naming string.
-  
+
   Unlike thing->full-uri, thing->short-string will discard exact artifact, group
   and verison information instead giving only a URI with respect to the
   platform, namespace and name of a Thing.
@@ -415,13 +417,13 @@
   {:pre  [(platformed? t)]
    :post [(re-find short-string-pattern %)]}
   (match [t]
-    [([::namespace {:name nn
+    [([::namespace {:name   nn
                     :parent {:name pn}}]
       :seq)]
     ,,(format "%s::%s" pn nn)
 
-    [([::def {:name n
-              :parent {:name nn
+    [([::def {:name   n
+              :parent {:name   nn
                        :parent {:name pn}}}]
       :seq)]
     ,,(format "%s::%s/%s"

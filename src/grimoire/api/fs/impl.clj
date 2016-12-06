@@ -30,7 +30,7 @@
           (Config? cfg)]
    :post [(file? %)]}
   (let [d (get cfg ({:meta     :docs
-                     :else     :docs     ;; FIXME: is this really the default case? seems janky.
+                     :else     :docs ;; FIXME: is this really the default case? seems janky.
                      :related  :notes
                      :notes    :notes
                      :examples :examples}
@@ -41,7 +41,7 @@
             (:examples) "/examples/"
             (:notes)    "/notes.md"
             nil)
-        h (io/file (str d "/" (t/thing->url-path thing) e))]
+        h (io/file (str d "/" (t/thing->url-path thing util/url-munge) e))]
     h))
 
 (defn thing->notes-handle
