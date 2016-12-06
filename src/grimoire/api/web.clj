@@ -32,7 +32,7 @@
          (string? op)]}
   (str (:host config)
        api-base-str
-       (when thing (t/thing->url-path thing util/url-munge))
+       (when thing (t/thing->url-path thing))
        "?op=" op
        (when-let [type (:type config :edn)]
          (when-let [t' (normalize-type type)]
@@ -51,4 +51,4 @@
              (nil? thing))]}
   (str (:host config)
        store-base-str
-       (when thing (t/thing->url-path thing util/url-munge))))
+       (when thing (t/thing->url-path thing))))
