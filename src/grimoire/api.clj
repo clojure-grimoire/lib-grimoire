@@ -35,7 +35,7 @@
   must extend this multimethod.
 
   λ [config Group] → (Either (Succeed (Seq Artifact)) (Failure String))"
-  
+
   dispatch)
 
 (defmulti -list-versions
@@ -161,7 +161,7 @@
   empty result if there are no known artifacts.
 
   Fails if the group is unknown or if another Failure is encountered."
-  
+
   [config group-thing]
   {:pre [(t/group? group-thing)]}
   (-list-artifacts config group-thing))
@@ -207,7 +207,7 @@
 
   Fails if the specified Namespace does not exist or if another failure is
   encountered."
-  
+
   [config namespace-thing]
   {:pre [(t/namespace? namespace-thing)]}
   (-list-defs config namespace-thing))
@@ -339,7 +339,7 @@
 (defn write-related
   "Writes a sequence of things representing defs into the datastore's related
   file as specified by the target thing."
-  
+
   [config thing related-things]
   {:pre [(every? t/def? related-things)
          (t/def? thing)]}
@@ -537,7 +537,7 @@
                        (for [r results
                              e el]
                          (ctor r e)))
-                   
+
                    (string? el)
                    ,,(let [ctor (forge pattern)]
                        (map #(ctor % el) results))
@@ -574,12 +574,12 @@
       ;;----------------------------------------
       [:platform gid art v plat]
       ,,(f plat list-platforms)
-      
+
       ;; Case of a version
       ;;----------------------------------------
       [:version gid art v]
       ,,(f v list-versions)
-      
+
       ;; Case of an artifact
       ;;----------------------------------------
       [:artifact gid art]
@@ -609,7 +609,7 @@
         (if (e/succeed? ?res)
           (e/succeed (first (e/result ?res)))
           ?res))
-      
+
       ;; Case of a ns
       ;;----------------------------------------
       [([:ns  gid art v plat ns] :seq)]
