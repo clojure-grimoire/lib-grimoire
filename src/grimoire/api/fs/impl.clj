@@ -2,14 +2,10 @@
   "Filesystem datastore implementation details. This namespace is not part of
   the intentional API exposed in `grimoire.api` and should not be used by
   library client code."
-  (:require [grimoire.util :as util]
+  (:require [grimoire.util :as util :refer [file?]]
             [grimoire.things :as t]
             [grimoire.api.fs :refer [Config?]]
             [clojure.java.io :as io]))
-
-(defn file?
-  [h]
-  (instance? java.io.File h))
 
 ;; Private helpers for getting fs handles
 ;;--------------------
@@ -30,7 +26,7 @@
           (Config? cfg)]
    :post [(file? %)]}
   (let [d (get cfg ({:meta     :docs
-                     :else     :docs     ;; FIXME: is this really the default case? seems janky.
+                     :else     :docs ;; FIXME: is this really the default case? seems janky.
                      :related  :notes
                      :notes    :notes
                      :examples :examples}

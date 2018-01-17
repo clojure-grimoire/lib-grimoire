@@ -3,8 +3,9 @@
   uniquely naming and referencing entities in a Grimoire documentation
   store.
 
-  Thing     ::= Sum[Group, Artifact, Version, Platform,
-                    Namespace, Def, Note, Example];
+  ```
+  Thing ::= Sum[Group, Artifact, Version, Platform,
+                Namespace, Def, Note, Example];
   Group     ::= Record[                   Name: String];
   Artifact  ::= Record[Parent: Group,     Name: String];
   Version   ::= Record[Parent: Artifact,  Name: String];
@@ -13,7 +14,9 @@
   Def       ::= Record[Parent: Namespace, Name: String];
 
   Note      ::= Record[Parent: Thing,     Handle: String];
-  Example   ::= Record[Parent: Thing,     Handle: String];"
+  Example   ::= Record[Parent: Thing,     Handle: String];
+  ```
+  "
   (:refer-clojure :exclude [def namespace])
   (:require [clojure.string :as string]
             [clojure.core.match :refer [match]]
@@ -441,3 +444,12 @@
       (if ?def
         [:def nil nil nil platform ns ?def]
         [:ns  nil nil nil platform ns]))))
+
+(defn thing->pattern [t]
+  (->> t
+       (iterate :parent)
+       (take-while (complement nil?))
+       (map :name)
+       reverse
+       (cons (keyword (name (t/tag t))))
+       vec))

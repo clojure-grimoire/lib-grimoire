@@ -90,7 +90,11 @@
   installed.
 
   Currently the only additional reader function is the default reader function,
-  which will return a tuple [:cant-read <tag symbol> <raw value>]."
+  which will return a tuple [::unreadable <tag symbol> <raw value>]."
   [s]
-  (edn/read-string {:default (fn [t v] [:cant-read t v])}
+  (edn/read-string {:default (fn [t v] [::unreadable t v])}
                    s))
+
+(defn file?
+  [h]
+  (instance? java.io.File h))
