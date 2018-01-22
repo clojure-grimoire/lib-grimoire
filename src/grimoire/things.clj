@@ -1,333 +1,160 @@
 (ns grimoire.things
-  "This namespace implements a \"thing\" structure, approximating a URI, for
+  "
+  This namespace implements a \"thing\" structure, approximating a URI, for
   uniquely naming and referencing entities in a Grimoire documentation
-  store.
-
-  Thing     ::= Sum[Group, Artifact, Version, Platform,
-                    Namespace, Def, Note, Example];
-  Group     ::= Record[                   Name: String];
-  Artifact  ::= Record[Parent: Group,     Name: String];
-  Version   ::= Record[Parent: Artifact,  Name: String];
-  Platform  ::= Record[Parent: Version,   Name: String];
-  Namespace ::= Record[Parent: Platform,  Name: String];
-  Def       ::= Record[Parent: Namespace, Name: String];
-
-  Note      ::= Record[Parent: Thing,     Handle: String];
-  Example   ::= Record[Parent: Thing,     Handle: String];"
-  (:refer-clojure :exclude [def namespace])
+  store."
+  (:refer-clojure :exclude [def namespace parents])
   (:require [clojure.string :as string]
-            [clojure.core.match :refer [match]]
+            [clojure.spec.alpha :as s]
+            [clojure.core.match :refer [match]] 
             [grimoire.util :as u]
             [guten-tag.core :as t]
             [cemerick.url :as url]))
 
-(t/deftag group
-  "Represents a Maven group."
-  [name]
-  {:pre [(string? name)]})
+(s/def ::name string?)
+(s/def ::handle uri?)
 
-(t/deftag artifact
-  "Represents a Maven artifact, rooted on a group."
-  [parent, name]
-  {:pre [(group? parent)
-         (string? name)]})
+(defmulti thing-spec :type)
+(defmethod thing-spec :default [_]
+  (constantly false))
+(s/def ::thing (s/multi-spec thing-spec :thing))
 
-(t/deftag version
-  "Represents a Maven version, rooted on an artifact."
-  [parent, name]
-  {:pre [(artifact? parent)
-         (string? name)]})
+;; Groups, Artifacts and Versions Maven style.
+;;--------------------------------------------------------------------------------------------------
+(s/def :grimoire.things.group/type #{::group})
+(s/def ::group
+  (s/keys :req-un [:grimoire.things.group/type
+                   ::name]))
+(defmethod thing-spec ::group [_] ::group)
 
-(t/deftag platform
-  "Represents a Clojure \"platform\" rooted on a version of an
-  artifact.
+(s/def :grimoire.things.artifact/type #{::artifact})
+(s/def :grimoire.things.artifact/parent ::group)
+(s/def ::artifact
+  (s/keys :req-un [:grimoire.things.artifact/type
+                   ::name
+                   :grimoire.things.artifact/parent]))
+(defmethod thing-spec ::artifact [_] ::artifact)
 
-  Platforms are a construct and represent a versioned set of
-  namespaces (and thus of defs) defining the versioned package at that
-  version. The idea is that a single artifact may have \"platform\"
-  code for any of Clojure, ClojureScript, ClojureCLR and soforth
-  simultaneously. Selecting a platform in a tree thus selects a set of
-  namespaces and defs which are particular to this platform. It also
-  allows Grimoire to host what would otherwise be name-colliding
-  functions which are really implicitly differentiated by platform."
-  [parent, name]
-  {:pre [(version? parent)
-         (string? name)]})
+(s/def :grimoire.things.version/type #{::version})
+(s/def :grimoire.things.version/parent ::artifact)
+(s/def ::version
+  (s/keys :req-un [:grimoire.things.version/type
+                   ::name
+                   :grimoire.things.version/parent]))
+(defmethod thing-spec ::artifact [_] ::artifact)
 
-(t/deftag namespace
-  "Represents a Clojure \"namespace\" rooted on a platform in a
-  version of an artifact."
-  [parent, name]
-  {:pre [(platform? parent)
-         (string? name)]})
+(s/def :grimoire.things.version/type #{::version})
+(s/def :grimoire.things.version/parent ::artifact)
+(s/def ::version
+  (s/keys :req-un [:grimoire.things.version/type
+                   ::name
+                   :grimoire.things.version/parent]))
+(defmethod thing-spec ::version [_] ::version)
 
-(t/deftag def
-  "Represents a Clojure \"Def\" rooted in a namespace on a platform in
-  a version of an artifact."
-  [parent, name]
-  {:pre [(namespace? parent)
-         (string? name)]})
+(defn thing? [t]
+  (s/valid? ::thing t))
 
-(declare thing?)
+;; Clojure-like Platforms with Namespaces and Defs
+;;--------------------------------------------------------------------------------------------------
+(s/def :grimoire.things.platform/type #{::platform})
+(s/def :grimoire.things.platform/parent ::version)
+(defmulti platform-spec :name)
+(s/def ::platform
+  (s/keys :req-un [:grimoire.things.platform/type
+                   :grimoire.things.platform/parent
+                   ::name]))
+(defmethod thing-spec ::platform [_] ::platform)
 
-(t/deftag note
-  "Represents a single block of notes on an arbitrary Thing as
-  identified by a Handle. The Handle is intended to be some structure
-  such as a file path, record ID, UUID or something else uniquely
-  naming a specific note."
-  [parent, name, handle]
-  {:pre [(thing? parent)
-         (string? name)
-         (string? handle)]})
+(s/def :grimoire.things.clj*.platform/name #{"clj" "cljc" "cljs"})
+(s/def :grimoire.things.clj*/platform
+  (s/and ::platform
+         (s/keys :req-un [:grimoire.things.clj*.platform/name])))
 
-(t/deftag example
-  "Represents a single example on an arbitrary Thing as identified by
-  a Handle. The Handle is intended to be some structure such as a file
-  path, record ID, UUID or other unique identifier for that singular
-  specific example."
-  [parent, name, handle]
-  {:pre [(thing? parent)
-         (string? name)
-         (string? handle)]})
+(s/def :grimoire.things.clj*.namespace/type #{::namespace})
+(s/def :grimoire.things.clj*.namespace/parent :grimoire.things.clj*/platform)
+(s/def ::namespace
+  (s/keys :req-un [:grimoire.things.clj*.namespace/type
+                   ::name
+                   :grimoire.things.clj*.namespace/parent]))
+(defmethod thing-spec ::namespace [_] ::namespace)
 
-;; Helpers for walking thing paths
-
+(s/def :grimoire.things.clj*.def/type #{::def})
+(s/def :grimoire.things.clj*.def/parent ::namespace)
+(s/def ::def
+  (s/keys :req-un [:grimoire.things.clj*.def/type
+                   ::name
+                   :grimoire.things.clj*.def/parent]))
+(defmethod thing-spec ::def [_] ::def)
 
-(defn leaf?
-  "Predicate testing whether the input Thing is either an example or a
-  note."
-  [t]
-  (or (note? t)
-      (example? t)))
+;; Java Platform with Packages, Classes, Methods and Fields
+;;--------------------------------------------------------------------------------------------------
+(s/def :grimoire.things.jvm.platform/name #{"jvm"})
+(s/def :grimoire.things.jvm/platform
+  (s/and ::platform
+         (s/keys :req-un [:grimoire.things.platform.jvm/name])))
 
-(defn namespaced?
-  "Predicate testing whether the input either is a namespace or has a namespace
-  as a parent."
-  [t]
-  (or (namespace? t)
-      (def? t)
-      (and (leaf? t)
-           (namespaced? (:parent t)))))
+(s/def :grimoire.things.package/type #{::package})
+(s/def :grimoire.things.package/parent :grimoire.things.jvm/platform)
+(s/def ::package
+  (s/keys :req-un [:grimoire.things.package/type
+                   ::name
+                   :grimoire.things.package/parent]))
+(defmethod thing-spec ::package [_] ::package)
 
-(defn platformed?
-  "Predicate testing whether the input either is a platform or has a platform as
-  a parent."
-  [t]
-  (or (namespaced? t)
-      (platform? t)
-      (and (leaf? t)
-           (platformed? (:parent t)))))
+(s/def :grimoire.things.class/type #{::class})
+(s/def :grimoire.things.class/parent ::package)
+(s/def ::class
+  (s/keys :req-un [:grimoire.things.class/type
+                   ::name
+                   :grimoire.things.class/parent]))
+(defmethod thing-spec ::class [_] ::class)
 
-(defn versioned?
-  "Predicate testing whether the input exists within the subset of the \"thing\"
-  variant which can be said to be \"versioned\" in that it is rooted on a
-  Version instance and thus a version instance can be reached by upwards
-  traversal."
-  [t]
-  (or (platformed? t)
-      (version? t)
-      (and (leaf? t)
-           (versioned? (:parent t)))))
+(s/def :grimoire.things.method/type #{::method})
+(s/def :grimoire.things.method/parent ::class)
+(s/def ::method
+  (s/keys :req-un [:grimoire.things.method/type
+                   ::name
+                   :grimoire.things.method/parent]))
+(defmethod thing-spec ::method [_] ::method)
 
-(defn artifacted?
-  "Predicate testing whether the input either is an artifact or has an artifact
-  as a parent."
-  [t]
-  (or (versioned? t)
-      (artifact? t)
-      (and (leaf? t)
-           (artifacted? (:parent t)))))
+(s/def :grimoire.things.field/type #{::field})
+(s/def :grimoire.things.field/parent ::class)
+(s/def ::field
+  (s/keys :req-un [:grimoire.things.field/type
+                   ::name
+                   :grimoire.things.field/parent]))
+(defmethod thing-spec ::field [_] ::field)
 
-(defn grouped?
-  "Predicate testing whether the input either is a group or has a group as a
-  parent."
-  [t]
-  (or (artifacted? t)
-      (group? t)
-      (and (leaf? t)
-           (grouped? (:parent t)))))
+;; Examples and Documents as annotations on things
+;;--------------------------------------------------------------------------------------------------
+(s/def :grimoire.things.annotation/parent
+  (s/and ::thing
+         #(not (s/valid? % ::group)
+               (s/valid? % ::artifact))))
+(s/def :grimoire.things.annotation/title ::name)
 
-(defn thing?
-  "Predicate testing whether the input exists within the \"thing\" variant of
-  Σ[Group, Artifact,Version, Platform, Namespace, Def]"
-  [t]
-  (grouped? t))
+(s/def :grimoire.things.example/type #{::example})
+(s/def ::example
+  (s/keys :req-un [:grimoire.things.example/type
+                   :grimoire.things.annotation/title
+                   ::handle]))
 
-(defn thing->parent
-  "Function from any object to Maybe[Thing]. If the input is a thing, returns
-  the parent (maybe nil) of that Thing. Otherwise returns nil."
-  [t]
-  (when (thing? t)
-    (:parent t)))
+(s/def :grimoire.things.document/type #{::document})
+(s/def ::document
+  (s/keys :req-un [:grimoire.things.document/type
+                   :grimoire.things.annotation/title
+                   ::handle]))
 
-(defn thing->name
-  "Function from an object to Maybe[String]. If the input is a thing, returns
-  the name of the Thing. Otherwise returns nil."
-  [t]
-  {:pre [(thing? t)]}
-  (:name t))
-
-;; smarter url caching constructors
-
-
-(declare thing->url-path)
-
-(defn ->Group
-  ([groupid]
-   {:pre [(string? groupid)]}
-   (let [v (->group groupid)]
-     (assoc v ::url (thing->url-path v))))
-
-  ([_ groupid]
-   (->Group groupid)))
-
-(defn ->Artifact
-  [group artifact]
-  (let [v (->artifact group artifact)]
-    (assoc v ::url (thing->url-path v))))
-
-(defn ->Version
-  [artifact version]
-  (let [v (->version artifact version)]
-    (assoc v ::url (thing->url-path v))))
-
-(defn ->Platform
-  [version platform]
-  (let [v (->platform version (u/normalize-platform platform))]
-    (assoc v ::url (thing->url-path v))))
-
-(defn ->Ns
-  [platform namespace]
-  (let [v (->namespace platform namespace)]
-    (assoc v ::url (thing->url-path v))))
-
-(defn ->Def
-  [namespace name]
-  (let [v (->def namespace name)]
-    (assoc v ::url (thing->url-path v))))
-
-(defn ->Example
-  [thing name handle]
-  (let [v (->example thing name handle)]
-    (assoc v ::url handle)))
-
-(defn ->Note
-  [thing name handle]
-  (let [v (->note thing name handle)]
-    (assoc v ::url handle)))
-
-;; Manipulating things and strings
-
-(defn thing->path
-  "Provides a mechanism for converting one of the Handle objects into a
-  cannonical \"path\" which can be serialized, deserialized and walked back into
-  a Handle."
-  [t]
-  {:pre [(thing? t)]}
-  (or (::url t)
-      (thing->url-path t)))
+;;
 
 (defn path->thing
   "String to Thing transformer which builds a Thing tree by splitting on /. The
   resulting things are rooted on a Group as required by the definition of a
   Thing."
   [path]
-  (->> (string/split path #"/" 6)
-       (map vector [->Group ->Artifact ->Version ->Platform ->Ns ->Def])
-       (reduce (fn [acc [f v]]
-                 (if v (f acc v) acc))
-               nil)))
+  ;; FIXME
+  nil)
 
-(defn ensure-thing
-  "Transformer which, if given a string, will construct a Thing (with a warning)
-  and if given a Thing will return the Thing without modification. Intended as a
-  guard for potentially mixed input situations."
-  [maybe-thing]
-  (cond (string? maybe-thing)
-        ,,(do (.write *err* "Warning: building a thing from a string via ensure-string!\n")
-              (path->thing maybe-thing))
-
-        (thing? maybe-thing)
-        ,,maybe-thing
-
-        :else
-        ,,(throw
-           (Exception.
-            (str "Unsupported ensure-thing value "
-                 (pr-str maybe-thing))))))
-
-;; Traversing things
-
-(defn thing->group
-  "Function from a Thing to a Group. If the Thing is rooted on a Group,
-  or is a Group, traverses thing->parent until a Group is produced. Otherwise
-  returns nil."
-  [t]
-  {:pre [(thing? t)]}
-  (when (grouped? t)
-    (if-not (group? t)
-      (when t
-        (recur (thing->parent t)))
-      t)))
-
-(defn thing->artifact
-  "Function from a Thing to an Artifact. If the Thing is rooted on an Artifact,
-  or is an Artifact, traverses thing->parent until the rooting Artifact is
-  reached and then returns that value. Otherwise returns nil."
-  [t]
-  {:pre [(thing? t)]}
-  (when (artifacted? t)
-    (if-not (artifact? t)
-      (when t
-        (recur (thing->parent t)))
-      t)))
-
-(defn thing->version
-  "Function from a Thing to a Verison. If the Thing is rooted on a Version or is
-  a Version, traverses thing->parent until the rooting Version is reached and
-  then returns that value. Otherwise returns nil."
-  [t]
-  {:pre [(thing? t)]}
-  (when (versioned? t)
-    (if-not (version? t)
-      (when t
-        (recur (thing->parent t)))
-      t)))
-
-(defn thing->platform
-  "Function from a Thing to a Platform. If the Thing is rooted on a Platform or
-  is a Platform traverses thing->parent until the rooting Platform is reached
-  and then returns that value. Otherwise returns nil."
-  [t]
-  {:pre [(thing? t)]}
-  (when (platformed? t)
-    (if-not (platform? t)
-      (when t
-        (recur (thing->parent t)))
-      t)))
-
-(defn thing->namespace
-  "Function from a Thing to a Namespace. If the Thing is rooted on a Platform or
-  is a Platform traverses thing->parent until the rooting Platform is reached
-  and then returns that value. Otherwise returns nil."
-  [t]
-  {:pre [(thing? t)]}
-  (when (namespaced? t)
-    (if-not (namespace? t)
-      (when t
-        (recur (thing->parent t)))
-      t)))
-
-(defn thing->def
-  "Function from a Thing to a Def. If the Thing either is a Def or is rooted on
-  a Def, traverses thing->parent until the rooting Def is reached and then
-  returns that value. Otherwise returns nil."
-  [t]
-  {:pre [(thing? t)]}
-  (when (def? t) t))
-
-;; Bits and bats
-
 (defn thing->url-path
   "Function from a Thing to a munged and URL safe Thing path"
   [t]
@@ -412,16 +239,15 @@
   org.clojure/clojure/1.6.0/clj/clojure.core/+ would give the short string
   clj::clojure.core/+."
   [t]
-  {:pre  [(platformed? t)]
-   :post [(re-find short-string-pattern %)]}
+  {:post [(re-find short-string-pattern %)]}
   (match [t]
-    [([::namespace {:name nn
+    [([::namespace {:name   nn
                     :parent {:name pn}}]
       :seq)]
     ,,(format "%s::%s" pn nn)
 
-    [([::def {:name n
-              :parent {:name nn
+    [([::def {:name   n
+              :parent {:name   nn
                        :parent {:name pn}}}]
       :seq)]
     ,,(format "%s::%s/%s"
