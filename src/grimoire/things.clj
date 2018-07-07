@@ -127,6 +127,10 @@
 
 ;; Examples and Documents as annotations on things
 ;;--------------------------------------------------------------------------------------------------
+;; FIXME (arrdem 1/22/2018):
+;;
+;;  The intent here is that annotations should be attachable to any "concrete" thing, being anythign
+;;  which is not a document or an example. Previously there was a concept of a "leaf"
 (s/def :grimoire.things.annotation/parent
   (s/and ::thing
          #(not (s/valid? % ::group)
@@ -139,6 +143,15 @@
                    :grimoire.things.annotation/title
                    ::handle]))
 
+;; FIXME (arrdem 1/22/2018):
+;;
+;;  There are many kinds of documents, such as warnings, articles, editorialization and particularly
+;;  replacement or alternative docstrings. The original Grimoire "1.0" `Note` type was intended to
+;;  represent an arbitrary article but in reality was a singleton representing a replacement
+;;  docstring. Sadly, the ability to interpret documents as alternatives to docstrings is still much
+;;  needed and this structure doesn't give a way to indicate the intended interpretation.
+;;
+;;  Maybe that's purely a UI issue? Seems like a concern of the document author tho..
 (s/def :grimoire.things.document/type #{::document})
 (s/def ::document
   (s/keys :req-un [:grimoire.things.document/type
