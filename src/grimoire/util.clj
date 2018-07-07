@@ -110,20 +110,19 @@
 
   Stolen from AndyF with thanks."
   [version-str]
-  (let [to-long         (fn [^String s] (Long/parseLong s))
-        [major minor x] (str/split version-str #"\." -1)
-        [incremental x] (str/split x #"-" -1)
-        ;; qual1 will be one of "alpha" "beta" "rc", or "zfinal" if
-        ;; version-str is of the form "x.y.z".  It will always be
-        ;; lower case so that normal alphabetic order comparison is
-        ;; used, without weirdness of upper case letters being sorted
-        ;; earlier than lower case letters.
-        [qual1 qual2]   (if x
-                          (if-let [[_ a b] (re-matches #"^(?i)(alpha|beta|rc)(\d+)$" x)]
-                            [(str/lower-case a) (to-long b)]
-                            [x nil])
-                          ["zfinal" nil])]
-    [(to-long major) (to-long minor) (to-long incremental) qual1 qual2]))
+  (let [to-long (fn [^String s] (Long/parseLong s))
+      [v q] (str/split version-str #"-" 2)
+      [major minor incremental] (mapv to-long (str/split v #"\."))]
+  [major
+   (or minor 0)
+   (or incremental 0)
+   ;; qual1 will be one of "alpha" "beta" "rc", or "zfinal" if
+   ;; version-str is of the form "x.y.z".  It will always be
+   ;; lower case so that normal alphabetic order comparison is
+   ;; used, without weirdness of upper case letters being sorted
+   ;; earlier than lower case letters.
+   (if q (str/lower-case (re-find #"[^\d]+" q)) "zfinal")
+   (some->> q (re-find #"\d+$") to-long)]))
 
 (defn edn-read-string-with-readers
   "Read a string with clojure.edn/read-string and additional reader functions
